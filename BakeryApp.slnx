@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="BakeryApp.Api/BakeryApp.Api.csproj" />
+  <Project Path="BakeryApp.Core/BakeryApp.Core.csproj" />
+  <Project Path="BakeryApp.Infrastructure/BakeryApp.Infrastructure.csproj" />
+</Solution>

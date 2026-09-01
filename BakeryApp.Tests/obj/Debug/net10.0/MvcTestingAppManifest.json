@@ -1,0 +1,5 @@
+{
+  "BakeryApp.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "\/workspaces\/Bakery_app\/BakeryApp.Api",
+  "BakeryApp.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "\/workspaces\/Bakery_app\/BakeryApp.Core",
+  "BakeryApp.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "\/workspaces\/Bakery_app\/BakeryApp.Infrastructure"
+}
