@@ -3,6 +3,7 @@ using BakeryApp.Core.Enums;
 using BakeryApp.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using BakeryApp.Core;
 
 namespace BakeryApp.Api.Controllers;
 
@@ -31,18 +32,23 @@ public class InventoryController : ControllerBase
                 v.UnitPrice,
                 CurrentStock = _context.InventoryLedgerEntries
                     .Where(e => e.ProductVariantId == v.Id)
-                    .Sum(e => e.Quantity)
+                    .Sum(e => (int?)e.Quantity) ?? 0
             })
             .ToListAsync();
 
         return Ok(stock);
     }
 
-    // POST: api/inventory/batch
-
+    // POST: api/inventory/batch (Supports both routes used in tests/clients)
+    [HttpPost("batch")]
     [HttpPost("production-batch")]
     public async Task<IActionResult> RecordProductionBatch([FromBody] ProductionBatchRequest request)
     {
+        if (request == null)
+        {
+            return BadRequest("Request body cannot be null.");
+        }
+
         if (request.Quantity <= 0)
         {
             return BadRequest("Production quantity must be greater than zero.");
@@ -71,4 +77,5 @@ public class InventoryController : ControllerBase
         return Ok(new { message = "Production batch recorded successfully", entryId = entry.Id, quantityAdded = request.Quantity });
     }
 }
+
 public record ProductionBatchRequest(Guid ProductVariantId, int Quantity, string? ReferenceNote, Guid? EmployeeId);
