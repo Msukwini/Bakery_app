@@ -28,3 +28,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// Required so WebApplicationFactory in tests can access your API entry point
+public partial class Program { }

@@ -1,12 +1,14 @@
+using System.Data.Common;
+using BakeryApp.Infrastructure.Data;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System.Data.Common;
-using BakeryApp.Infrastructure.Data;
 
-public class BakeryWebApplicationFactory<TProgram> : WebApplicationFactory<TProgram> where TProgram : class
+namespace BakeryApp.Tests;
+
+public class BakeryWebApplicationFactory : WebApplicationFactory<Program>
 {
     private DbConnection? _connection;
 
@@ -14,6 +16,7 @@ public class BakeryWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
     {
         builder.ConfigureServices(services =>
         {
+            // 1. Remove existing DbContextOptions registration
             var descriptor = services.SingleOrDefault(
                 d => d.ServiceType == typeof(DbContextOptions<BakeryDbContext>));
 
@@ -22,26 +25,31 @@ public class BakeryWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
                 services.Remove(descriptor);
             }
 
-            // Fix: Use a named in-memory database so Cache=Shared correctly shares the tables across contexts
-            services.AddSingleton<DbConnection>(container =>
+            // 2. Keep an open in-memory SQLite connection alive for the test lifetime
+            _connection = new SqliteConnection("DataSource=:memory:");
+            _connection.Open();
+
+            // 3. Register DbContext using the persistent open connection
+            services.AddDbContext<BakeryDbContext>(options =>
             {
-                var connection = new SqliteConnection("Data Source=BakeryTestDb;Mode=Memory;Cache=Shared");
-                connection.Open(); // Keep the root connection open so the in-memory DB persists
-                _connection = connection;
-                return connection;
+                options.UseSqlite(_connection);
             });
 
-            services.AddDbContext<BakeryDbContext>((container, options) =>
-            {
-                var connection = container.GetRequiredService<DbConnection>();
-                options.UseSqlite(connection);
-            });
+            // 4. Ensure schema and seeded data are created in the SQLite database
+            var sp = services.BuildServiceProvider();
+            using var scope = sp.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<BakeryDbContext>();
+            db.Database.EnsureCreated();
         });
     }
 
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        _connection?.Dispose();
+        if (disposing)
+        {
+            _connection?.Close();
+            _connection?.Dispose();
+        }
     }
 }
