@@ -1,0 +1,27 @@
+services:
+  bakery-api:
+    container_name: bakery_app_api
+    build:
+      context: .
+      dockerfile: BakeryApp.Api/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/bakery.db
+      - Jwt__Secret=YourSuperSecretKeyHere_MustBeAtLeast32BytesLong!
+      - Jwt__Issuer=BakeryAppApi
+      - Jwt__Audience=BakeryAppClients
+      - Jwt__ExpiryInMinutes=60
+    volumes:
+      - bakery-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  bakery-data:

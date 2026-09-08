@@ -1,81 +1,116 @@
 using BakeryApp.Core.Entities;
-using BakeryApp.Core.Enums;
-using BakeryApp.Infrastructure.Data;
+using BakeryApp.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using BakeryApp.Core;
 
 namespace BakeryApp.Api.Controllers;
 
+public record RecordBatchRequest(
+    Guid ProductVariantId,
+    int Quantity,
+    string? BatchNumber
+);
+
+public record WriteOffRequest(
+    Guid ProductVariantId,
+    int Quantity,
+    string Reason
+);
+
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Admin,BakeryStaff")]
 public class InventoryController : ControllerBase
 {
-    private readonly BakeryDbContext _context;
+    private readonly BakeryDbContext _dbContext;
 
-    public InventoryController(BakeryDbContext context)
+    public InventoryController(BakeryDbContext dbContext)
     {
-        _context = context;
+        _dbContext = dbContext;
     }
 
-    // GET: api/inventory/stock
-    [HttpGet("stock")]
-    public async Task<IActionResult> GetStockLevels()
-    {
-        var stock = await _context.ProductVariants
-            .Include(v => v.Product)
-            .Select(v => new
-            {
-                VariantId = v.Id,
-                ProductName = v.Product.Name,
-                v.SizeName,
-                v.UnitPrice,
-                CurrentStock = _context.InventoryLedgerEntries
-                    .Where(e => e.ProductVariantId == v.Id)
-                    .Sum(e => (int?)e.Quantity) ?? 0
-            })
-            .ToListAsync();
-
-        return Ok(stock);
-    }
-
-    // POST: api/inventory/batch (Supports both routes used in tests/clients)
     [HttpPost("batch")]
-    [HttpPost("production-batch")]
-    public async Task<IActionResult> RecordProductionBatch([FromBody] ProductionBatchRequest request)
+    public async Task<IActionResult> RecordBatch([FromBody] RecordBatchRequest request)
     {
-        if (request == null)
-        {
-            return BadRequest("Request body cannot be null.");
-        }
-
         if (request.Quantity <= 0)
         {
-            return BadRequest("Production quantity must be greater than zero.");
+            return BadRequest("Batch quantity must be greater than zero.");
         }
 
-        var variant = await _context.ProductVariants.FindAsync(request.ProductVariantId);
+        var variant = await _dbContext.ProductVariants
+            .FirstOrDefaultAsync(v => v.Id == request.ProductVariantId);
+
         if (variant == null)
         {
             return NotFound("Product variant not found.");
         }
 
-        var entry = new InventoryLedgerEntry
+        var ledgerEntry = new InventoryLedgerEntry
         {
             Id = Guid.NewGuid(),
             ProductVariantId = request.ProductVariantId,
             Quantity = request.Quantity,
-            TransactionType = InventoryTransactionType.ProductionBatch,
             Timestamp = DateTime.UtcNow,
-            ReferenceNote = request.ReferenceNote ?? "Manufactured stock production batch",
-            EmployeeId = request.EmployeeId
+            ReferenceNote = $"Production Batch: {request.BatchNumber ?? "N/A"}"
         };
 
-        _context.InventoryLedgerEntries.Add(entry);
-        await _context.SaveChangesAsync();
+        _dbContext.InventoryLedgerEntries.Add(ledgerEntry);
+        await _dbContext.SaveChangesAsync();
 
-        return Ok(new { message = "Production batch recorded successfully", entryId = entry.Id, quantityAdded = request.Quantity });
+        return Ok(new { Message = "Production batch recorded successfully.", LedgerEntryId = ledgerEntry.Id });
+    }
+
+    [HttpPost("write-off")]
+    public async Task<IActionResult> WriteOffStock([FromBody] WriteOffRequest request)
+    {
+        if (request.Quantity <= 0)
+        {
+            return BadRequest("Write-off quantity must be greater than zero.");
+        }
+
+        var variant = await _dbContext.ProductVariants
+            .FirstOrDefaultAsync(v => v.Id == request.ProductVariantId);
+
+        if (variant == null)
+        {
+            return NotFound("Product variant not found.");
+        }
+
+        var ledgerEntry = new InventoryLedgerEntry
+        {
+            Id = Guid.NewGuid(),
+            ProductVariantId = request.ProductVariantId,
+            Quantity = -request.Quantity,
+            Timestamp = DateTime.UtcNow,
+            ReferenceNote = $"Write-Off Reason: {request.Reason}"
+        };
+
+        _dbContext.InventoryLedgerEntries.Add(ledgerEntry);
+        await _dbContext.SaveChangesAsync();
+
+        return Ok(new { Message = "Stock write-off recorded successfully.", LedgerEntryId = ledgerEntry.Id });
+    }
+
+    [HttpGet("stock/{productVariantId:guid}")]
+    public async Task<IActionResult> GetStockLevel(Guid productVariantId)
+    {
+        var variant = await _dbContext.ProductVariants
+            .FirstOrDefaultAsync(v => v.Id == productVariantId);
+
+        if (variant == null)
+        {
+            return NotFound("Product variant not found.");
+        }
+
+        var totalStock = await _dbContext.InventoryLedgerEntries
+            .Where(e => e.ProductVariantId == productVariantId)
+            .SumAsync(e => e.Quantity);
+
+        return Ok(new
+        {
+            ProductVariantId = productVariantId,
+            CurrentStockLevel = totalStock
+        });
     }
 }
-
-public record ProductionBatchRequest(Guid ProductVariantId, int Quantity, string? ReferenceNote, Guid? EmployeeId);

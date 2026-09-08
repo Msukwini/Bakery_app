@@ -1,113 +1,92 @@
 using BakeryApp.Core.Entities;
-using BakeryApp.Core.Enums;
-using BakeryApp.Infrastructure.Data;
+using BakeryApp.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using BakeryApp.Core.Enums;
 
 namespace BakeryApp.Api.Controllers;
 
+public record DispatchOrderRequest(
+    Guid ResellerEmployeeId,
+    Guid ProductVariantId,
+    int Quantity
+);
+
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class SalesController : ControllerBase
 {
-    private readonly BakeryDbContext _context;
+    private readonly BakeryDbContext _dbContext;
 
-    public SalesController(BakeryDbContext context)
+    public SalesController(BakeryDbContext dbContext)
     {
-        _context = context;
+        _dbContext = dbContext;
     }
 
-    // POST: api/sales/dispatch
     [HttpPost("dispatch")]
-    public async Task<IActionResult> DispatchToReseller([FromBody] DispatchOrderRequest request)
+    [Authorize(Roles = "Admin,BakeryStaff")]
+    public async Task<IActionResult> DispatchOrder([FromBody] DispatchOrderRequest request)
     {
-        var reseller = await _context.EmployeeIds
+        var reseller = await _dbContext.EmployeeIds
             .Include(e => e.Person)
-            .FirstOrDefaultAsync(e => e.Id == request.ResellerEmployeeId && e.RoleType == EmployeeRoleType.Reseller);
+            .FirstOrDefaultAsync(e => e.Id == request.ResellerEmployeeId && e.RoleType == RoleType.Reseller);
 
         if (reseller == null)
-            return NotFound("Reseller employee not found or inactive.");
+        {
+            return NotFound("Reseller not found.");
+        }
 
-        var variant = await _context.ProductVariants
-            .Include(v => v.Product)
+        var variant = await _dbContext.ProductVariants
             .FirstOrDefaultAsync(v => v.Id == request.ProductVariantId);
 
         if (variant == null)
-            return NotFound("Product variant not found.");
-
-        // Check available stock
-        var availableStock = await _context.InventoryLedgerEntries
-            .Where(e => e.ProductVariantId == request.ProductVariantId)
-            .SumAsync(e => e.Quantity);
-
-        if (availableStock < request.Quantity)
-            return BadRequest($"Insufficient stock. Available: {availableStock}, Requested: {request.Quantity}");
-
-        // 1. Record stock dispatch (negative quantity entry)
-        var stockDeduction = new InventoryLedgerEntry
         {
+            return NotFound("Product variant not found.");
+        }
+
+        var ledgerEntry = new InventoryLedgerEntry
+        {
+            Id = Guid.NewGuid(),
             ProductVariantId = request.ProductVariantId,
-            EmployeeId = reseller.Id,
-            TransactionType = InventoryTransactionType.AllocatedToReseller,
-            Quantity = -request.Quantity,
-            ReferenceNote = $"Dispatched to {reseller.Person.FirstName} {reseller.Person.LastName} ({reseller.Code})",
-            Timestamp = DateTime.UtcNow
+            EmployeeId = request.ResellerEmployeeId,
+            TransactionType = TransactionType.DispatchToReseller,
+            Quantity = request.Quantity,
+            Timestamp = DateTime.UtcNow,
+            ReferenceNote = $"Dispatched {request.Quantity} units to reseller {reseller.Code}"
         };
 
-        _context.InventoryLedgerEntries.Add(stockDeduction);
+        _dbContext.InventoryLedgerEntries.Add(ledgerEntry);
+        await _dbContext.SaveChangesAsync();
 
-        await _context.SaveChangesAsync();
-
-        // 2. Calculate financial totals
-        var totalSalesValue = variant.UnitPrice * request.Quantity;
-        var totalCommissionEarned = variant.BaseCommissionAmount * request.Quantity;
-
-        return Ok(new
-        {
-            Message = "Order dispatched successfully.",
-            ResellerCode = reseller.Code,
-            ResellerName = $"{reseller.Person.FirstName} {reseller.Person.LastName}",
-            Product = $"{variant.Product.Name} - {variant.SizeName}",
-            QuantityDispatched = request.Quantity,
-            TotalSalesValue = totalSalesValue,
-            CommissionEarned = totalCommissionEarned
-        });
+        return Ok(new { Message = "Order dispatched successfully.", LedgerEntryId = ledgerEntry.Id });
     }
 
-    // GET: api/sales/commissions/{resellerEmployeeId}
-    [HttpGet("commissions/{resellerEmployeeId}")]
-    public async Task<IActionResult> GetResellerCommissions(Guid resellerEmployeeId)
+    [HttpGet("commissions/{resellerEmployeeId:guid}")]
+    [Authorize(Roles = "Admin,Reseller")]
+    public async Task<IActionResult> GetCommissions(Guid resellerEmployeeId)
     {
-        var reseller = await _context.EmployeeIds
-            .Include(e => e.Person)
+        var reseller = await _dbContext.EmployeeIds
             .FirstOrDefaultAsync(e => e.Id == resellerEmployeeId);
 
         if (reseller == null)
+        {
             return NotFound("Reseller not found.");
+        }
 
-        var dispatches = await _context.InventoryLedgerEntries
-            .Include(e => e.ProductVariant)
-            .Where(e => e.EmployeeId == resellerEmployeeId && e.TransactionType == InventoryTransactionType.AllocatedToReseller)
+        var entries = await _dbContext.InventoryLedgerEntries
+            .Include(i => i.ProductVariant)
+            .Where(i => i.EmployeeId == resellerEmployeeId && i.TransactionType == TransactionType.DispatchToReseller)
             .ToListAsync();
 
-        var totalItemsDispatched = Math.Abs(dispatches.Sum(d => d.Quantity));
-        var totalCommissionEarned = dispatches.Sum(d => Math.Abs(d.Quantity) * d.ProductVariant.BaseCommissionAmount);
+        var totalCommission = entries.Sum(e => e.Quantity * (e.ProductVariant?.BaseCommissionAmount ?? 0m));
 
         return Ok(new
         {
-            ResellerCode = reseller.Code,
-            ResellerName = $"{reseller.Person.FirstName} {reseller.Person.LastName}",
-            TotalItemsDispatched = totalItemsDispatched,
-            TotalCommissionEarned = totalCommissionEarned,
-            DispatchHistory = dispatches.Select(d => new
-            {
-                d.Timestamp,
-                Size = d.ProductVariant.SizeName,
-                Quantity = Math.Abs(d.Quantity),
-                CommissionEarned = Math.Abs(d.Quantity) * d.ProductVariant.BaseCommissionAmount
-            })
+            ResellerId = resellerEmployeeId,
+            TotalDispatched = entries.Sum(e => e.Quantity),
+            TotalCommissionEarned = totalCommission
         });
     }
 }
-
-public record DispatchOrderRequest(Guid ResellerEmployeeId, Guid ProductVariantId, int Quantity);
