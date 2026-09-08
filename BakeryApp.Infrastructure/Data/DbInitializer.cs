@@ -1,96 +1,112 @@
 using BakeryApp.Core.Entities;
 using BakeryApp.Core.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace BakeryApp.Infrastructure.Data;
 
 public static class DbInitializer
 {
-    public static void Initialize(BakeryDbContext context)
+    public static async Task SeedAsync(BakeryDbContext dbContext)
     {
-        // Ensure database is created
-        context.Database.EnsureCreated();
+        await dbContext.Database.EnsureCreatedAsync();
 
-        // Stop if data already exists
-        if (context.Products.Any()) return;
-
-        // 1. Seed Residences
-        var residenceA = new Residence
+        // 1. Seed Admin Account
+        if (!await dbContext.Persons.AnyAsync(p => p.Email == "admin@bakeryapp.com"))
         {
-            Name = "Sunset Heights Residence",
-            Address = "124 Hillside Avenue",
-            EstimatedPopulation = 450,
-            MaxResellerCapacity = 2
-        };
-
-        var residenceB = new Residence
-        {
-            Name = "Green Valley Estates",
-            Address = "88 Meadow Lane",
-            EstimatedPopulation = 800,
-            MaxResellerCapacity = 4
-        };
-
-        context.Residences.AddRange(residenceA, residenceB);
-
-        // 2. Seed Products and Variants
-        var creamBucket = new Product
-        {
-            Name = "Vanilla Cream Bucket",
-            Description = "Fresh bulk bakery vanilla cream",
-            IsActive = true,
-            Variants = new List<ProductVariant>
+            var adminPerson = new Person
             {
-                new ProductVariant { SizeName = "5L Bucket", UnitPrice = 15.00m, BaseCommissionAmount = 2.00m },
-                new ProductVariant { SizeName = "10L Bucket", UnitPrice = 28.00m, BaseCommissionAmount = 4.00m }
-            }
-        };
+                Id = Guid.NewGuid(),
+                FirstName = "System",
+                LastName = "Administrator",
+                Email = "admin@bakeryapp.com",
+                PhoneNumber = "555-0000",
+                CreatedAt = DateTime.UtcNow
+            };
 
-        var breadDough = new Product
-        {
-            Name = "Pre-Mix Bread Dough",
-            Description = "Ready-to-bake dough batch",
-            IsActive = true,
-            Variants = new List<ProductVariant>
+            var adminEmployee = new EmployeeId
             {
-                new ProductVariant { SizeName = "10kg Bag", UnitPrice = 22.00m, BaseCommissionAmount = 3.00m }
+                Id = Guid.NewGuid(),
+                Code = "ADM-001",
+                RoleType = EmployeeRoleType.Admin,
+                IsActive = true,
+                AssignedAt = DateTime.UtcNow,
+                PersonId = adminPerson.Id
+            };
+
+            dbContext.Persons.Add(adminPerson);
+            dbContext.EmployeeIds.Add(adminEmployee);
+        }
+
+        // 2. Seed Sample Products & Variants
+        if (!await dbContext.Products.AnyAsync())
+        {
+            var sourdough = new Product
+            {
+                Id = Guid.NewGuid(),
+                Name = "Artisan Sourdough",
+                Description = "Slow-fermented traditional sourdough bread",
+                IsActive = true
+            };
+
+            var sourdoughSingle = new ProductVariant
+            {
+                Id = Guid.NewGuid(),
+                ProductId = sourdough.Id,
+                SizeName = "Single Loaf",
+                UnitPrice = 4.50m,
+                IsActive = true
+            };
+
+            var sourdoughPack = new ProductVariant
+            {
+                Id = Guid.NewGuid(),
+                ProductId = sourdough.Id,
+                SizeName = "Family Pack (3 Loaves)",
+                UnitPrice = 12.00m,
+                IsActive = true
+            };
+
+            var croissant = new Product
+            {
+                Id = Guid.NewGuid(),
+                Name = "Butter Croissant",
+                Description = "Flaky French butter croissants",
+                IsActive = true
+            };
+
+            var croissantPack = new ProductVariant
+            {
+                Id = Guid.NewGuid(),
+                ProductId = croissant.Id,
+                SizeName = "Pack of 4",
+                UnitPrice = 6.00m,
+                IsActive = true
+            };
+
+            dbContext.Products.AddRange(sourdough, croissant);
+            dbContext.ProductVariants.AddRange(sourdoughSingle, sourdoughPack, croissantPack);
+        }
+
+        // 3. Seed Commission Rules for those variants (if none exist)
+        if (!await dbContext.CommissionRules.AnyAsync())
+        {
+            // Get the variants we just seeded (or find them by name)
+            var variants = await dbContext.ProductVariants.ToListAsync();
+            foreach (var variant in variants)
+            {
+                // For simplicity, set a rule of 10% of UnitPrice as commission per unit
+                var rule = new CommissionRule
+                {
+                    Id = Guid.NewGuid(),
+                    ProductVariantId = variant.Id,
+                    RatePerUnit = variant.UnitPrice * 0.10m, // e.g., 0.45 for 4.50 loaf
+                    EffectiveDate = DateTime.UtcNow,
+                    IsActive = true
+                };
+                dbContext.CommissionRules.Add(rule);
             }
-        };
+        }
 
-        context.Products.AddRange(creamBucket, breadDough);
-        context.SaveChanges(); // Save to generate entity IDs
-
-        // 3. Seed Reseller Person & Employee ID
-        var person = new Person
-        {
-            FirstName = "Sarah",
-            LastName = "Jenkins",
-            Email = "sarah.j@bakerydist.com",
-            PhoneNumber = "+15550192834"
-        };
-
-        var resellerEmployee = new EmployeeId
-        {
-            Code = "RES-1001",
-            RoleType = EmployeeRoleType.Reseller,
-            ResidenceId = residenceA.Id,
-            Person = person
-        };
-
-        context.Persons.Add(person);
-        context.EmployeeIds.Add(resellerEmployee);
-
-        // 4. Seed Initial Production Stock Ledger Entry
-        var variant5L = creamBucket.Variants.First(v => v.SizeName == "5L Bucket");
-        var initialStock = new InventoryLedgerEntry
-        {
-            ProductVariantId = variant5L.Id,
-            TransactionType = InventoryTransactionType.ProductionBatch,
-            Quantity = 100,
-            ReferenceNote = "Initial Batch Production",
-            Timestamp = DateTime.UtcNow
-        };
-
-        context.InventoryLedgerEntries.Add(initialStock);
-        context.SaveChanges();
+        await dbContext.SaveChangesAsync();
     }
 }

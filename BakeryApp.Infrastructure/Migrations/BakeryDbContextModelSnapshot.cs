@@ -17,6 +17,155 @@ namespace BakeryApp.Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
 
+            modelBuilder.Entity("BakeryApp.Core.Entities.AuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NewValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OldValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AuditLogs");
+                });
+
+            modelBuilder.Entity("BakeryApp.Core.Entities.CommissionLedgerEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("AmountEarned")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("AmountPaid")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsSettled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ResellerEmployeeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ResellerId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ResellerSaleId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResellerId");
+
+                    b.HasIndex("ResellerSaleId");
+
+                    b.ToTable("CommissionLedgerEntries");
+                });
+
+            modelBuilder.Entity("BakeryApp.Core.Entities.CommissionRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("EffectiveDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ProductVariantId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("RatePerUnit")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TierConfigurationJson")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductVariantId");
+
+                    b.ToTable("CommissionRules");
+                });
+
+            modelBuilder.Entity("BakeryApp.Core.Entities.DeliveryAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ActualDeliveryEmployeeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("CreatedByAdminId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("PermanentDeliveryEmployeeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ResellerEmployeeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ResellerId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActualDeliveryEmployeeId");
+
+                    b.HasIndex("PermanentDeliveryEmployeeId");
+
+                    b.HasIndex("ResellerId");
+
+                    b.ToTable("DeliveryAssignments");
+                });
+
             modelBuilder.Entity("BakeryApp.Core.Entities.EmployeeId", b =>
                 {
                     b.Property<Guid>("Id")
@@ -169,6 +318,44 @@ namespace BakeryApp.Infrastructure.Migrations
                     b.ToTable("ProductVariants");
                 });
 
+            modelBuilder.Entity("BakeryApp.Core.Entities.ResellerSale", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CommissionRuleId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ProductVariantId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ResellerEmployeeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ResellerId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("SaleDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("UnitPriceAtSale")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommissionRuleId");
+
+                    b.HasIndex("ProductVariantId");
+
+                    b.HasIndex("ResellerId");
+
+                    b.ToTable("ResellerSales");
+                });
+
             modelBuilder.Entity("BakeryApp.Core.Entities.Residence", b =>
                 {
                     b.Property<Guid>("Id")
@@ -192,6 +379,61 @@ namespace BakeryApp.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Residences");
+                });
+
+            modelBuilder.Entity("BakeryApp.Core.Entities.CommissionLedgerEntry", b =>
+                {
+                    b.HasOne("BakeryApp.Core.Entities.EmployeeId", "Reseller")
+                        .WithMany()
+                        .HasForeignKey("ResellerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BakeryApp.Core.Entities.ResellerSale", "ResellerSale")
+                        .WithMany()
+                        .HasForeignKey("ResellerSaleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Reseller");
+
+                    b.Navigation("ResellerSale");
+                });
+
+            modelBuilder.Entity("BakeryApp.Core.Entities.CommissionRule", b =>
+                {
+                    b.HasOne("BakeryApp.Core.Entities.ProductVariant", "ProductVariant")
+                        .WithMany()
+                        .HasForeignKey("ProductVariantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProductVariant");
+                });
+
+            modelBuilder.Entity("BakeryApp.Core.Entities.DeliveryAssignment", b =>
+                {
+                    b.HasOne("BakeryApp.Core.Entities.EmployeeId", "ActualDeliveryEmployee")
+                        .WithMany()
+                        .HasForeignKey("ActualDeliveryEmployeeId");
+
+                    b.HasOne("BakeryApp.Core.Entities.EmployeeId", "PermanentDeliveryEmployee")
+                        .WithMany()
+                        .HasForeignKey("PermanentDeliveryEmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BakeryApp.Core.Entities.EmployeeId", "Reseller")
+                        .WithMany()
+                        .HasForeignKey("ResellerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ActualDeliveryEmployee");
+
+                    b.Navigation("PermanentDeliveryEmployee");
+
+                    b.Navigation("Reseller");
                 });
 
             modelBuilder.Entity("BakeryApp.Core.Entities.EmployeeId", b =>
@@ -238,6 +480,33 @@ namespace BakeryApp.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("BakeryApp.Core.Entities.ResellerSale", b =>
+                {
+                    b.HasOne("BakeryApp.Core.Entities.CommissionRule", "CommissionRule")
+                        .WithMany()
+                        .HasForeignKey("CommissionRuleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BakeryApp.Core.Entities.ProductVariant", "ProductVariant")
+                        .WithMany()
+                        .HasForeignKey("ProductVariantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BakeryApp.Core.Entities.EmployeeId", "Reseller")
+                        .WithMany()
+                        .HasForeignKey("ResellerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CommissionRule");
+
+                    b.Navigation("ProductVariant");
+
+                    b.Navigation("Reseller");
                 });
 
             modelBuilder.Entity("BakeryApp.Core.Entities.Person", b =>

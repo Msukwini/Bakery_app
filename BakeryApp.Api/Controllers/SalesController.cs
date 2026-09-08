@@ -1,5 +1,5 @@
 using BakeryApp.Core.Entities;
-using BakeryApp.Infrastructure.Persistence;
+using BakeryApp.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

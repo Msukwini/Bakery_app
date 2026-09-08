@@ -1,6 +1,6 @@
 using System.Text;
 using BakeryApp.Api.Infrastructure;
-using BakeryApp.Infrastructure.Persistence;
+using BakeryApp.Infrastructure.Data;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -41,9 +41,8 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-builder.Services.AddDbContext<BakeryDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") 
-        ?? "Data Source=bakery.db"));
+builder.Services.AddDbContext<BakeryApp.Infrastructure.Data.BakeryDbContext>(options => 
+    options.UseSqlite("Data Source=bakery.db"));
 
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddFluentValidationAutoValidation();

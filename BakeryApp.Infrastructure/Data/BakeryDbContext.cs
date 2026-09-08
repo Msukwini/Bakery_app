@@ -13,28 +13,37 @@ public class BakeryDbContext : DbContext
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
     public DbSet<InventoryLedgerEntry> InventoryLedgerEntries => Set<InventoryLedgerEntry>();
+    
+    // ** NEW MISSING DbSets **
+    public DbSet<CommissionRule> CommissionRules => Set<CommissionRule>();
+    public DbSet<ResellerSale> ResellerSales => Set<ResellerSale>();
+    public DbSet<CommissionLedgerEntry> CommissionLedgerEntries => Set<CommissionLedgerEntry>();
+    public DbSet<DeliveryAssignment> DeliveryAssignments => Set<DeliveryAssignment>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // Enforce unique employee badge/code
-        modelBuilder.Entity<EmployeeId>()
-            .HasIndex(e => e.Code)
-            .IsUnique();
+        modelBuilder.Entity<EmployeeId>().HasIndex(e => e.Code).IsUnique();
 
-        // Person to EmployeeIds (One-to-Many)
         modelBuilder.Entity<EmployeeId>()
             .HasOne(e => e.Person)
             .WithMany(p => p.EmployeeIds)
             .HasForeignKey(e => e.PersonId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Residence to EmployeeIds (One-to-Many)
         modelBuilder.Entity<EmployeeId>()
             .HasOne(e => e.Residence)
             .WithMany(r => r.AssignedResellers)
             .HasForeignKey(e => e.ResidenceId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // Enforce that a ResellerSale must always have a CommissionRule (Rule 29)
+        modelBuilder.Entity<ResellerSale>()
+            .HasOne(s => s.CommissionRule)
+            .WithMany()
+            .HasForeignKey(s => s.CommissionRuleId)
+            .OnDelete(DeleteBehavior.Restrict); // Prevent deleting a rule if sales reference it
     }
 }
