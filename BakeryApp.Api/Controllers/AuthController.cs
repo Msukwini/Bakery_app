@@ -1,74 +1,124 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
+using BakeryApp.Api.DTOs;
+using BakeryApp.Core.Enums;
 using BakeryApp.Infrastructure.Data;
+using BakeryApp.Infrastructure.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 
 namespace BakeryApp.Api.Controllers;
-
-public record LoginRequest(string Email, string Code);
 
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly BakeryDbContext _dbContext;
-    private readonly IConfiguration _configuration;
+    private readonly IAuthService _authService;
+    private readonly BakeryDbContext _context;
 
-    public AuthController(BakeryDbContext dbContext, IConfiguration configuration)
+    public AuthController(IAuthService authService, BakeryDbContext context)
     {
-        _dbContext = dbContext;
-        _configuration = configuration;
+        _authService = authService;
+        _context = context;
+    }
+
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    {
+        // Validate that a ResidenceId is provided if role is Reseller
+        if (request.Role.ToLower() == "reseller" && request.ResidenceId == null)
+        {
+            return BadRequest("ResidenceId is required for Reseller registration.");
+        }
+
+        // Parse the role
+        if (!Enum.TryParse<EmployeeRoleType>(request.Role, true, out var role))
+        {
+            return BadRequest("Invalid role. Valid roles are: Admin, Reseller.");
+        }
+
+        // For simplicity, we restrict automatic Admin registration. Admins must be created manually or via seed.
+        if (role == EmployeeRoleType.Admin)
+        {
+            // Check if any Admin already exists
+            var adminExists = await _context.EmployeeIds.AnyAsync(e => e.RoleType == EmployeeRoleType.Admin);
+            if (adminExists) return Forbid("Admin registration is restricted. Use the seeded admin account.");
+        }
+
+        try
+        {
+            var employee = await _authService.RegisterUserAsync(
+                request.FirstName,
+                request.LastName,
+                request.Email,
+                request.PhoneNumber,
+                request.Password,
+                role,
+                request.ResidenceId
+            );
+
+            // Generate token for immediate login
+            var token = await _authService.GenerateJwtToken(employee);
+
+            return Ok(new AuthResponse
+            {
+                Token = token,
+                Email = request.Email,
+                Role = role.ToString(),
+                EmployeeId = employee.Code
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var employee = await _dbContext.EmployeeIds
-            .Include(e => e.Person)
-            .FirstOrDefaultAsync(e => e.Code == request.Code && e.Person.Email == request.Email);
-
-        if (employee == null || !employee.IsActive)
+        var employee = await _authService.ValidateUserCredentials(request.Email, request.Password);
+        if (employee == null)
         {
-            return Unauthorized(new { Message = "Invalid credentials or inactive employee record." });
+            return Unauthorized(new { message = "Invalid email or password." });
         }
 
-        var token = GenerateJwtToken(employee.Person.Email, employee.RoleType.ToString(), employee.Id);
+        var token = await _authService.GenerateJwtToken(employee);
+        var person = await _context.Persons.FindAsync(employee.PersonId);
 
-        return Ok(new
+        return Ok(new AuthResponse
         {
             Token = token,
-            EmployeeId = employee.Id,
-            Role = employee.RoleType.ToString()
+            Email = person?.Email ?? "",
+            Role = employee.RoleType.ToString(),
+            EmployeeId = employee.Code
         });
     }
 
-    private string GenerateJwtToken(string email, string role, Guid employeeId)
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<IActionResult> GetCurrentUser()
     {
-        var jwtSettings = _configuration.GetSection("Jwt");
-        var secretKey = Encoding.UTF8.GetBytes(jwtSettings["Secret"] 
-            ?? "YourSuperSecretKeyHere_MustBeAtLeast32BytesLong!");
+        var userId = User.FindFirst("EmployeeCode")?.Value;
+        if (userId == null) return Unauthorized();
 
-        var claims = new[]
+        var employee = await _context.EmployeeIds
+            .Include(e => e.Person)
+            .FirstOrDefaultAsync(e => e.Code == userId);
+
+        if (employee == null) return NotFound();
+
+        return Ok(new
         {
-            new Claim(ClaimTypes.NameIdentifier, employeeId.ToString()),
-            new Claim(ClaimTypes.Email, email),
-            new Claim(ClaimTypes.Role, role)
-        };
-
-        var key = new SymmetricSecurityKey(secretKey);
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var token = new JwtSecurityToken(
-            issuer: jwtSettings["Issuer"] ?? "BakeryAppApi",
-            audience: jwtSettings["Audience"] ?? "BakeryAppClients",
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(double.Parse(jwtSettings["ExpiryInMinutes"] ?? "60")),
-            signingCredentials: creds
-        );
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
+            employee.Code,
+            employee.RoleType,
+            employee.IsActive,
+            Person = new
+            {
+                employee.Person.FirstName,
+                employee.Person.LastName,
+                employee.Person.Email,
+                employee.Person.PhoneNumber
+            }
+        });
     }
 }

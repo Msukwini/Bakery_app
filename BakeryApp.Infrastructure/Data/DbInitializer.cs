@@ -1,3 +1,4 @@
+using BCrypt.Net;
 using BakeryApp.Core.Entities;
 using BakeryApp.Core.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +20,7 @@ public static class DbInitializer
                 FirstName = "System",
                 LastName = "Administrator",
                 Email = "admin@bakeryapp.com",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123"),
                 PhoneNumber = "555-0000",
                 CreatedAt = DateTime.UtcNow
             };

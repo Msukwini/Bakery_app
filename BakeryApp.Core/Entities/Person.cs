@@ -7,6 +7,7 @@ public class Person
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;
+    public string PasswordHash { get; set; } = string.Empty; // NEW: For secure login
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation property: One person can hold multiple distinct Employee IDs

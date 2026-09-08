@@ -20,6 +20,7 @@ public class BakeryDbContext : DbContext
     public DbSet<CommissionLedgerEntry> CommissionLedgerEntries => Set<CommissionLedgerEntry>();
     public DbSet<DeliveryAssignment> DeliveryAssignments => Set<DeliveryAssignment>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<DeliveryEarning> DeliveryEarnings => Set<DeliveryEarning>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

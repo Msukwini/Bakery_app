@@ -1,3 +1,4 @@
+using BakeryApp.Infrastructure.Services;
 using System.Text;
 using BakeryApp.Api.Infrastructure;
 using BakeryApp.Infrastructure.Data;
@@ -44,6 +45,7 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddDbContext<BakeryApp.Infrastructure.Data.BakeryDbContext>(options => 
     options.UseSqlite("Data Source=bakery.db"));
 
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddFluentValidationAutoValidation();
 

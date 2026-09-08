@@ -169,3 +169,4 @@
 /workspaces/Bakery_app/BakeryApp.Api/obj/Debug/net10.0/BakeryApp.Api.pdb
 /workspaces/Bakery_app/BakeryApp.Api/obj/Debug/net10.0/BakeryApp.Api.genruntimeconfig.cache
 /workspaces/Bakery_app/BakeryApp.Api/obj/Debug/net10.0/ref/BakeryApp.Api.dll
+/workspaces/Bakery_app/BakeryApp.Api/bin/Debug/net10.0/BCrypt-Net-Next.dll
