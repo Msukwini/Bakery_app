@@ -31,7 +31,7 @@ public class SalesController : ControllerBase
     {
         var reseller = await _dbContext.EmployeeIds
             .Include(e => e.Person)
-            .FirstOrDefaultAsync(e => e.Id == request.ResellerEmployeeId && e.RoleType == RoleType.Reseller);
+            .FirstOrDefaultAsync(e => e.Id == request.ResellerEmployeeId && e.RoleType == EmployeeRoleType.Reseller);
 
         if (reseller == null)
         {
@@ -51,7 +51,7 @@ public class SalesController : ControllerBase
             Id = Guid.NewGuid(),
             ProductVariantId = request.ProductVariantId,
             EmployeeId = request.ResellerEmployeeId,
-            TransactionType = TransactionType.DispatchToReseller,
+            TransactionType = InventoryTransactionType.AllocatedToReseller,
             Quantity = request.Quantity,
             Timestamp = DateTime.UtcNow,
             ReferenceNote = $"Dispatched {request.Quantity} units to reseller {reseller.Code}"
@@ -77,7 +77,7 @@ public class SalesController : ControllerBase
 
         var entries = await _dbContext.InventoryLedgerEntries
             .Include(i => i.ProductVariant)
-            .Where(i => i.EmployeeId == resellerEmployeeId && i.TransactionType == TransactionType.DispatchToReseller)
+            .Where(i => i.EmployeeId == resellerEmployeeId && i.TransactionType == InventoryTransactionType.AllocatedToReseller)
             .ToListAsync();
 
         var totalCommission = entries.Sum(e => e.Quantity * (e.ProductVariant?.BaseCommissionAmount ?? 0m));

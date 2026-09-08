@@ -1,4 +1,5 @@
 using BakeryApp.Core.Entities;
+using BakeryApp.Core.Enums;
 using BakeryApp.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -50,6 +51,7 @@ public class InventoryController : ControllerBase
         {
             Id = Guid.NewGuid(),
             ProductVariantId = request.ProductVariantId,
+            TransactionType = InventoryTransactionType.ProductionBatch,
             Quantity = request.Quantity,
             Timestamp = DateTime.UtcNow,
             ReferenceNote = $"Production Batch: {request.BatchNumber ?? "N/A"}"
@@ -81,6 +83,7 @@ public class InventoryController : ControllerBase
         {
             Id = Guid.NewGuid(),
             ProductVariantId = request.ProductVariantId,
+            TransactionType = InventoryTransactionType.DamagedOrReturned,
             Quantity = -request.Quantity,
             Timestamp = DateTime.UtcNow,
             ReferenceNote = $"Write-Off Reason: {request.Reason}"

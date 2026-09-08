@@ -31,19 +31,13 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Enter 'Bearer' followed by a space and your JWT token.\n\nExample: 'Bearer eyJhbGciOiJIUzI1Ni...'"
     });
 
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    // Microsoft.OpenApi 2.x removed Reference/OpenApiReference from the base models.
+    // References are now built against the live document via dedicated reference types,
+    // which is why AddSecurityRequirement takes a document => ... delegate (Swashbuckle 10.x).
+    
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
     {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
+        [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
     });
 });
 

@@ -27,7 +27,7 @@ public static class DbInitializer
             {
                 Id = Guid.NewGuid(),
                 Code = "ADM-001",
-                RoleType = EmployeeRoleType.Reseller,
+                RoleType = EmployeeRoleType.Admin, // was EmployeeRoleType.Reseller - the seeded "admin" had the wrong role
                 IsActive = true,
                 AssignedAt = DateTime.UtcNow,
                 PersonId = adminPerson.Id

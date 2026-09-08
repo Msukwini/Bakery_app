@@ -34,7 +34,7 @@ public class SettlementsController : ControllerBase
         }
 
         var reseller = await _dbContext.EmployeeIds
-            .FirstOrDefaultAsync(e => e.Id == request.ResellerEmployeeId && e.RoleType == RoleType.Reseller);
+            .FirstOrDefaultAsync(e => e.Id == request.ResellerEmployeeId && e.RoleType == EmployeeRoleType.Reseller);
 
         if (reseller == null)
         {
@@ -67,7 +67,7 @@ public class SettlementsController : ControllerBase
     public async Task<IActionResult> GetSettlementBalance(Guid resellerEmployeeId)
     {
         var reseller = await _dbContext.EmployeeIds
-            .FirstOrDefaultAsync(e => e.Id == resellerEmployeeId && e.RoleType == RoleType.Reseller);
+            .FirstOrDefaultAsync(e => e.Id == resellerEmployeeId && e.RoleType == EmployeeRoleType.Reseller);
 
         if (reseller == null)
         {
@@ -80,7 +80,7 @@ public class SettlementsController : ControllerBase
             .ToListAsync();
 
         var totalEarned = entries
-            .Where(e => e.TransactionType == TransactionType.DispatchToReseller)
+            .Where(e => e.TransactionType == InventoryTransactionType.AllocatedToReseller)
             .Sum(e => e.Quantity * (e.ProductVariant?.BaseCommissionAmount ?? 0m));
 
         var totalPaid = entries
