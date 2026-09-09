@@ -46,6 +46,9 @@ builder.Services.AddDbContext<BakeryApp.Infrastructure.Data.BakeryDbContext>(opt
     options.UseSqlite("Data Source=bakery.db"));
 
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IResellerApplicationService, ResellerApplicationService>();
+builder.Services.AddScoped<IInventoryService, InventoryService>();
+builder.Services.AddScoped<ISalesService, SalesService>();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddFluentValidationAutoValidation();
 

@@ -1,92 +1,150 @@
+using BakeryApp.Api.DTOs;
 using BakeryApp.Core.Entities;
-using BakeryApp.Infrastructure.Data;
+using BakeryApp.Core.Enums;
+using BakeryApp.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using BakeryApp.Core.Enums;
+using System.Security.Claims;
 
 namespace BakeryApp.Api.Controllers;
-
-public record DispatchOrderRequest(
-    Guid ResellerEmployeeId,
-    Guid ProductVariantId,
-    int Quantity
-);
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
 public class SalesController : ControllerBase
 {
-    private readonly BakeryDbContext _dbContext;
+    private readonly ISalesService _salesService;
+    private readonly BakeryApp.Infrastructure.Data.BakeryDbContext _context;
 
-    public SalesController(BakeryDbContext dbContext)
+    public SalesController(ISalesService salesService, BakeryApp.Infrastructure.Data.BakeryDbContext context)
     {
-        _dbContext = dbContext;
+        _salesService = salesService;
+        _context = context;
     }
 
-    [HttpPost("dispatch")]
-    [Authorize(Roles = "Admin,BakeryStaff")]
-    public async Task<IActionResult> DispatchOrder([FromBody] DispatchOrderRequest request)
+    [HttpPost("record")]
+    [Authorize(Roles = "Reseller,Admin")]
+    public async Task<IActionResult> RecordSale([FromBody] RecordSaleRequest request)
     {
-        var reseller = await _dbContext.EmployeeIds
-            .Include(e => e.Person)
-            .FirstOrDefaultAsync(e => e.Id == request.ResellerEmployeeId && e.RoleType == EmployeeRoleType.Reseller);
+        // Get the current user's employee code safely
+        var employeeCode = User.FindFirst("EmployeeCode")?.Value;
+        if (string.IsNullOrEmpty(employeeCode))
+            return Unauthorized("Employee code not found in token.");
 
-        if (reseller == null)
+        var currentUser = await _context.EmployeeIds
+            .FirstOrDefaultAsync(e => e.Code == employeeCode);
+        if (currentUser == null)
+            return Unauthorized("User not found.");
+
+        Guid resellerId;
+        if (User.IsInRole("Admin") && request.ResellerEmployeeId.HasValue)
         {
-            return NotFound("Reseller not found.");
+            resellerId = request.ResellerEmployeeId.Value;
+        }
+        else
+        {
+            if (currentUser.RoleType != EmployeeRoleType.Reseller)
+                return BadRequest("Only resellers can record sales without an explicit reseller ID.");
+            resellerId = currentUser.Id;
         }
 
-        var variant = await _dbContext.ProductVariants
-            .FirstOrDefaultAsync(v => v.Id == request.ProductVariantId);
-
-        if (variant == null)
+        try
         {
-            return NotFound("Product variant not found.");
+            var sale = await _salesService.RecordSaleAsync(
+                resellerId,
+                request.ProductVariantId,
+                request.Quantity,
+                request.UnitPriceAtSale,
+                currentUser.Id
+            );
+
+            var ledgerEntries = await _context.CommissionLedgerEntries
+                .Where(e => e.ResellerSaleId == sale.Id)
+                .ToListAsync();
+            var totalCommission = ledgerEntries.Sum(e => e.AmountEarned);
+
+            var variant = await _context.ProductVariants
+                .Include(v => v.Product)
+                .FirstOrDefaultAsync(v => v.Id == request.ProductVariantId);
+
+            return Ok(new SaleResponse
+            {
+                SaleId = sale.Id,
+                ProductName = variant?.Product?.Name ?? "Unknown",
+                VariantName = variant?.SizeName ?? "Unknown",
+                Quantity = sale.Quantity,
+                UnitPrice = sale.UnitPriceAtSale,
+                TotalAmount = sale.Quantity * sale.UnitPriceAtSale,
+                CommissionEarned = totalCommission,
+                SaleDate = sale.SaleDate
+            });
         }
-
-        var ledgerEntry = new InventoryLedgerEntry
+        catch (Exception ex)
         {
-            Id = Guid.NewGuid(),
-            ProductVariantId = request.ProductVariantId,
-            EmployeeId = request.ResellerEmployeeId,
-            TransactionType = InventoryTransactionType.AllocatedToReseller,
-            Quantity = request.Quantity,
-            Timestamp = DateTime.UtcNow,
-            ReferenceNote = $"Dispatched {request.Quantity} units to reseller {reseller.Code}"
-        };
-
-        _dbContext.InventoryLedgerEntries.Add(ledgerEntry);
-        await _dbContext.SaveChangesAsync();
-
-        return Ok(new { Message = "Order dispatched successfully.", LedgerEntryId = ledgerEntry.Id });
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
-    [HttpGet("commissions/{resellerEmployeeId:guid}")]
+    [HttpGet("commission/{resellerEmployeeId}")]
     [Authorize(Roles = "Admin,Reseller")]
-    public async Task<IActionResult> GetCommissions(Guid resellerEmployeeId)
+    public async Task<IActionResult> GetCommissionLedger(Guid resellerEmployeeId)
     {
-        var reseller = await _dbContext.EmployeeIds
-            .FirstOrDefaultAsync(e => e.Id == resellerEmployeeId);
+        var employeeCode = User.FindFirst("EmployeeCode")?.Value;
+        if (string.IsNullOrEmpty(employeeCode))
+            return Unauthorized();
 
-        if (reseller == null)
+        var currentUser = await _context.EmployeeIds
+            .FirstOrDefaultAsync(e => e.Code == employeeCode);
+        if (currentUser == null) return Unauthorized();
+
+        if (currentUser.RoleType == EmployeeRoleType.Reseller && currentUser.Id != resellerEmployeeId)
+            return Forbid("You can only view your own commission ledger.");
+
+        var entries = await _salesService.GetCommissionLedgerAsync(resellerEmployeeId);
+
+        var response = entries.Select(e => new CommissionLedgerResponse
         {
-            return NotFound("Reseller not found.");
-        }
+            Id = e.Id,
+            ProductName = e.ResellerSale?.ProductVariant?.Product?.Name ?? "Unknown",
+            VariantName = e.ResellerSale?.ProductVariant?.SizeName ?? "Unknown",
+            Quantity = e.ResellerSale?.Quantity ?? 0,
+            UnitPrice = e.ResellerSale?.UnitPriceAtSale ?? 0,
+            AmountEarned = e.AmountEarned,
+            AmountPaid = e.AmountPaid,
+            IsSettled = e.IsSettled,
+            CreatedAt = e.CreatedAt,
+            SaleId = e.ResellerSaleId
+        });
 
-        var entries = await _dbContext.InventoryLedgerEntries
-            .Include(i => i.ProductVariant)
-            .Where(i => i.EmployeeId == resellerEmployeeId && i.TransactionType == InventoryTransactionType.AllocatedToReseller)
-            .ToListAsync();
+        return Ok(response);
+    }
 
-        var totalCommission = entries.Sum(e => e.Quantity * (e.ProductVariant?.BaseCommissionAmount ?? 0m));
+    [HttpGet("balance/{resellerEmployeeId}")]
+    [Authorize(Roles = "Admin,Reseller")]
+    public async Task<IActionResult> GetCommissionBalance(Guid resellerEmployeeId)
+    {
+        var employeeCode = User.FindFirst("EmployeeCode")?.Value;
+        if (string.IsNullOrEmpty(employeeCode))
+            return Unauthorized();
 
-        return Ok(new
+        var currentUser = await _context.EmployeeIds
+            .FirstOrDefaultAsync(e => e.Code == employeeCode);
+        if (currentUser == null) return Unauthorized();
+
+        if (currentUser.RoleType == EmployeeRoleType.Reseller && currentUser.Id != resellerEmployeeId)
+            return Forbid("You can only view your own balance.");
+
+        var entries = await _salesService.GetCommissionLedgerAsync(resellerEmployeeId);
+        var totalEarned = entries.Sum(e => e.AmountEarned);
+        var totalPaid = entries.Sum(e => e.AmountPaid);
+        var outstanding = totalEarned - totalPaid;
+
+        return Ok(new CommissionBalanceResponse
         {
-            ResellerId = resellerEmployeeId,
-            TotalDispatched = entries.Sum(e => e.Quantity),
-            TotalCommissionEarned = totalCommission
+            Outstanding = outstanding,
+            TotalEarned = totalEarned,
+            TotalPaid = totalPaid
         });
     }
 }

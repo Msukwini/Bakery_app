@@ -1,45 +1,40 @@
-namespace BakeryApp.Api.DTOs;
-
 using BakeryApp.Core.Enums;
 
-public record CreateProductionBatchDto(
-    Guid ProductVariantId,
-    int Quantity,
-    string ReferenceNote
-);
+namespace BakeryApp.Api.DTOs;
 
-public record CreateAllocationDto(
-    Guid ProductVariantId,
-    Guid ResellerEmployeeId,
-    int Quantity,
-    string ReferenceNote
-);
+public class AddStockRequest
+{
+    public Guid ProductVariantId { get; set; }
+    public int Quantity { get; set; }
+    public InventoryTransactionType TransactionType { get; set; } // PRODUCTION, PURCHASE, etc.
+    public string? ReferenceNote { get; set; }
+}
 
-public record CreateAdjustmentDto(
-    Guid ProductVariantId,
-    InventoryTransactionType TransactionType,
-    int Quantity,
-    string ReferenceNote
-);
+public class DeductStockRequest
+{
+    public Guid ProductVariantId { get; set; }
+    public int Quantity { get; set; }
+    public InventoryTransactionType TransactionType { get; set; } // DAMAGED, EXPIRED, LOST, etc.
+    public string? ReferenceNote { get; set; }
+}
 
-public record InventoryLedgerResponseDto(
-    Guid Id,
-    Guid ProductVariantId,
-    string ProductName,
-    string SizeName,
-    InventoryTransactionType TransactionType,
-    string TransactionTypeLabel,
-    int Quantity,
-    DateTime Timestamp,
-    string ReferenceNote,
-    Guid? EmployeeId,
-    string? EmployeeCode,
-    string? EmployeeName
-);
+public class StockResponse
+{
+    public Guid ProductVariantId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string VariantName { get; set; } = string.Empty;
+    public int CurrentStock { get; set; }
+}
 
-public record StockBalanceDto(
-    Guid ProductVariantId,
-    string ProductName,
-    string SizeName,
-    int AvailableStock
-);
+public class LedgerEntryResponse
+{
+    public Guid Id { get; set; }
+    public Guid ProductVariantId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string VariantName { get; set; } = string.Empty;
+    public InventoryTransactionType TransactionType { get; set; }
+    public int Quantity { get; set; }
+    public DateTime Timestamp { get; set; }
+    public string ReferenceNote { get; set; } = string.Empty;
+    public string? EmployeeCode { get; set; }
+}

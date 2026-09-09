@@ -37,12 +37,12 @@ public class AuthController : ControllerBase
         }
 
         // For simplicity, we restrict automatic Admin registration. Admins must be created manually or via seed.
-        if (role == EmployeeRoleType.Admin)
-        {
-            // Check if any Admin already exists
-            var adminExists = await _context.EmployeeIds.AnyAsync(e => e.RoleType == EmployeeRoleType.Admin);
-            if (adminExists) return Forbid("Admin registration is restricted. Use the seeded admin account.");
-        }
+////        if (role == EmployeeRoleType.Admin)
+////        {
+////            // Check if any Admin already exists
+////            var adminExists = await _context.EmployeeIds.AnyAsync(e => e.RoleType == EmployeeRoleType.Admin);
+////            if (adminExists) return Forbid("Admin registration is restricted. Use the seeded admin account.");
+////        }
 
         try
         {

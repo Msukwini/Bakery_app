@@ -1,119 +1,120 @@
+using BakeryApp.Api.DTOs;
 using BakeryApp.Core.Entities;
 using BakeryApp.Core.Enums;
-using BakeryApp.Infrastructure.Data;
+using BakeryApp.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace BakeryApp.Api.Controllers;
 
-public record RecordBatchRequest(
-    Guid ProductVariantId,
-    int Quantity,
-    string? BatchNumber
-);
-
-public record WriteOffRequest(
-    Guid ProductVariantId,
-    int Quantity,
-    string Reason
-);
-
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin,BakeryStaff")]
+[Authorize] // All inventory endpoints require authentication
 public class InventoryController : ControllerBase
 {
-    private readonly BakeryDbContext _dbContext;
+    private readonly IInventoryService _inventoryService;
+    private readonly BakeryApp.Infrastructure.Data.BakeryDbContext _context;
 
-    public InventoryController(BakeryDbContext dbContext)
+    public InventoryController(IInventoryService inventoryService, BakeryApp.Infrastructure.Data.BakeryDbContext context)
     {
-        _dbContext = dbContext;
+        _inventoryService = inventoryService;
+        _context = context;
     }
 
-    [HttpPost("batch")]
-    public async Task<IActionResult> RecordBatch([FromBody] RecordBatchRequest request)
+    [HttpPost("add")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> AddStock([FromBody] AddStockRequest request)
     {
-        if (request.Quantity <= 0)
+        var employeeIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var employeeId = !string.IsNullOrEmpty(employeeIdClaim) ? Guid.Parse(employeeIdClaim) : (Guid?)null;
+
+        try
         {
-            return BadRequest("Batch quantity must be greater than zero.");
+            var entry = await _inventoryService.AddStockAsync(
+                request.ProductVariantId,
+                request.Quantity,
+                request.TransactionType,
+                request.ReferenceNote ?? "",
+                employeeId
+            );
+            return Ok(new { id = entry.Id, message = "Stock added successfully." });
         }
-
-        var variant = await _dbContext.ProductVariants
-            .FirstOrDefaultAsync(v => v.Id == request.ProductVariantId);
-
-        if (variant == null)
+        catch (Exception ex)
         {
-            return NotFound("Product variant not found.");
+            return BadRequest(new { error = ex.Message });
         }
-
-        var ledgerEntry = new InventoryLedgerEntry
-        {
-            Id = Guid.NewGuid(),
-            ProductVariantId = request.ProductVariantId,
-            TransactionType = InventoryTransactionType.ProductionBatch,
-            Quantity = request.Quantity,
-            Timestamp = DateTime.UtcNow,
-            ReferenceNote = $"Production Batch: {request.BatchNumber ?? "N/A"}"
-        };
-
-        _dbContext.InventoryLedgerEntries.Add(ledgerEntry);
-        await _dbContext.SaveChangesAsync();
-
-        return Ok(new { Message = "Production batch recorded successfully.", LedgerEntryId = ledgerEntry.Id });
     }
 
-    [HttpPost("write-off")]
-    public async Task<IActionResult> WriteOffStock([FromBody] WriteOffRequest request)
+    [HttpPost("deduct")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeductStock([FromBody] DeductStockRequest request)
     {
-        if (request.Quantity <= 0)
+        var employeeIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var employeeId = !string.IsNullOrEmpty(employeeIdClaim) ? Guid.Parse(employeeIdClaim) : (Guid?)null;
+
+        try
         {
-            return BadRequest("Write-off quantity must be greater than zero.");
+            var entry = await _inventoryService.DeductStockAsync(
+                request.ProductVariantId,
+                request.Quantity,
+                request.TransactionType,
+                request.ReferenceNote ?? "",
+                employeeId
+            );
+            return Ok(new { id = entry.Id, message = "Stock deducted successfully." });
         }
-
-        var variant = await _dbContext.ProductVariants
-            .FirstOrDefaultAsync(v => v.Id == request.ProductVariantId);
-
-        if (variant == null)
+        catch (Exception ex)
         {
-            return NotFound("Product variant not found.");
+            return BadRequest(new { error = ex.Message });
         }
-
-        var ledgerEntry = new InventoryLedgerEntry
-        {
-            Id = Guid.NewGuid(),
-            ProductVariantId = request.ProductVariantId,
-            TransactionType = InventoryTransactionType.DamagedOrReturned,
-            Quantity = -request.Quantity,
-            Timestamp = DateTime.UtcNow,
-            ReferenceNote = $"Write-Off Reason: {request.Reason}"
-        };
-
-        _dbContext.InventoryLedgerEntries.Add(ledgerEntry);
-        await _dbContext.SaveChangesAsync();
-
-        return Ok(new { Message = "Stock write-off recorded successfully.", LedgerEntryId = ledgerEntry.Id });
     }
 
-    [HttpGet("stock/{productVariantId:guid}")]
-    public async Task<IActionResult> GetStockLevel(Guid productVariantId)
+    [HttpGet("stock/{productVariantId}")]
+    public async Task<IActionResult> GetStock(Guid productVariantId)
     {
-        var variant = await _dbContext.ProductVariants
+        var variant = await _context.ProductVariants
+            .Include(v => v.Product)
             .FirstOrDefaultAsync(v => v.Id == productVariantId);
 
-        if (variant == null)
-        {
-            return NotFound("Product variant not found.");
-        }
+        if (variant == null) return NotFound("Product variant not found.");
 
-        var totalStock = await _dbContext.InventoryLedgerEntries
-            .Where(e => e.ProductVariantId == productVariantId)
-            .SumAsync(e => e.Quantity);
+        var stock = await _inventoryService.GetCurrentStockAsync(productVariantId);
 
-        return Ok(new
+        return Ok(new StockResponse
         {
-            ProductVariantId = productVariantId,
-            CurrentStockLevel = totalStock
+            ProductVariantId = variant.Id,
+            ProductName = variant.Product?.Name ?? "Unknown",
+            VariantName = variant.SizeName,
+            CurrentStock = stock
         });
+    }
+
+    [HttpGet("ledger/{productVariantId}")]
+    public async Task<IActionResult> GetLedger(Guid productVariantId, [FromQuery] int? limit = 100)
+    {
+        var variant = await _context.ProductVariants
+            .Include(v => v.Product)
+            .FirstOrDefaultAsync(v => v.Id == productVariantId);
+
+        if (variant == null) return NotFound("Product variant not found.");
+
+        var entries = await _inventoryService.GetLedgerAsync(productVariantId, limit);
+
+        var response = entries.Select(e => new LedgerEntryResponse
+        {
+            Id = e.Id,
+            ProductVariantId = e.ProductVariantId,
+            ProductName = variant.Product?.Name ?? "Unknown",
+            VariantName = variant.SizeName,
+            TransactionType = e.TransactionType,
+            Quantity = e.Quantity,
+            Timestamp = e.Timestamp,
+            ReferenceNote = e.ReferenceNote,
+            EmployeeCode = e.Employee?.Code
+        });
+
+        return Ok(response);
     }
 }
