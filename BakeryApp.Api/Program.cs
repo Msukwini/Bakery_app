@@ -49,6 +49,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IResellerApplicationService, ResellerApplicationService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<ISalesService, SalesService>();
+builder.Services.AddScoped<ISettlementService, SettlementService>();
+builder.Services.AddScoped<ISettlementService, SettlementService>();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddFluentValidationAutoValidation();
 
