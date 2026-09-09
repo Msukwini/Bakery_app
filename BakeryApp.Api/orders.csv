@@ -1,0 +1,2 @@
+OrderNumber,Customer,CustomerPhone,OrderDate,Status,TotalAmount,IsPaid,Items
+BUY-0001,John Doe,0821234567,09/09/2026 10:17:54,PAID,30.0,True,Butter Croissant x5
