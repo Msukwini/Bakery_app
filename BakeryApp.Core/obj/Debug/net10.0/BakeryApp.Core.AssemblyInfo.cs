@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BakeryApp.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+987d931eb68ce77e1d716925fd4336bc1831e108")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b7422fe5d8197a325fc0fd332b40e036ba312d00")]
 [assembly: System.Reflection.AssemblyProductAttribute("BakeryApp.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BakeryApp.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

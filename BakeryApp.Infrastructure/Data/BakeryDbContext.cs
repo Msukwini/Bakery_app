@@ -19,7 +19,10 @@ public class BakeryDbContext : DbContext
     public DbSet<ResellerSale> ResellerSales => Set<ResellerSale>();
     public DbSet<CommissionLedgerEntry> CommissionLedgerEntries => Set<CommissionLedgerEntry>();
     public DbSet<DeliveryAssignment> DeliveryAssignments => Set<DeliveryAssignment>();
+    public DbSet<BuyerOrder> BuyerOrders => Set<BuyerOrder>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<ResellerApplication> ResellerApplications => Set<ResellerApplication>();
     public DbSet<DeliveryEarning> DeliveryEarnings => Set<DeliveryEarning>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

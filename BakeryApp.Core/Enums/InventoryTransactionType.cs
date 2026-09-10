@@ -6,5 +6,6 @@ public enum InventoryTransactionType
     AllocatedToReseller = 2,
     SaleConfirmed = 3,
     DamagedOrReturned = 4,
-    AuditAdjustment = 5
+    AuditAdjustment = 5,
+    BuyerSale = 6
 }
