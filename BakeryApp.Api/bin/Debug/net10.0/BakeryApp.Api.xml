@@ -4,6 +4,31 @@
         <name>BakeryApp.Api</name>
     </assembly>
     <members>
+        <member name="M:BakeryApp.Api.Controllers.RoleManagementController.ListPendingUsers">
+            <summary>
+            List all Applicants (people who registered but have no Reseller/Delivery role yet)
+            </summary>
+        </member>
+        <member name="M:BakeryApp.Api.Controllers.RoleManagementController.ListAllPeople">
+            <summary>
+            List all Persons with their current roles (for admin to see who has what)
+            </summary>
+        </member>
+        <member name="M:BakeryApp.Api.Controllers.RoleManagementController.AssignReseller(System.Guid,BakeryApp.Api.Controllers.AssignRoleRequest)">
+            <summary>
+            Approve applicant as Reseller (adds RES-XXXX EmployeeId)
+            </summary>
+        </member>
+        <member name="M:BakeryApp.Api.Controllers.RoleManagementController.AssignDelivery(System.Guid)">
+            <summary>
+            Add Delivery role to a person (adds DEL-XXXX EmployeeId alongside any existing roles)
+            </summary>
+        </member>
+        <member name="M:BakeryApp.Api.Controllers.RoleManagementController.DeactivateRole(System.Guid)">
+            <summary>
+            Deactivate a role (e.g., terminate a reseller)
+            </summary>
+        </member>
         <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.CreateDocumentationId(System.Type)">
             <summary>
             Generates a documentation comment ID for a type.

@@ -4,5 +4,6 @@ public enum EmployeeRoleType
 {
     Admin = 0,
     Reseller = 1,
-    Delivery = 2
+    Delivery = 2,
+    Applicant = 3
 }

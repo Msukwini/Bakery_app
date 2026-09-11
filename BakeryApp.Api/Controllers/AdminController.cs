@@ -61,4 +61,22 @@ public class AdminController : ControllerBase
 
         return Ok(employees);
     }
+
+    [HttpGet("residences")]
+    public async Task<IActionResult> ListResidences()
+    {
+        var residences = await _context.Residences
+            .OrderBy(r => r.Name)
+            .Select(r => new
+            {
+                r.Id,
+                r.Name,
+                r.Address,
+                r.EstimatedPopulation,
+                r.MaxResellerCapacity
+            })
+            .ToListAsync();
+
+        return Ok(residences);
+    }
 }

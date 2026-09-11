@@ -5,12 +5,14 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import {
   LayoutDashboard, Users, Package, ShoppingCart,
-  Truck, DollarSign, FileText, LogOut, Home, Mail
+  Truck, DollarSign, FileText, LogOut, Home, Mail, UserCog, Building2
 } from 'lucide-react';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/dashboard/resellers', label: 'Resellers', icon: Users },
+  { href: '/dashboard/users', label: 'Users & Roles', icon: UserCog },
+  { href: '/dashboard/residences', label: 'Residences', icon: Building2 },
+  { href: '/dashboard/resellers', label: 'Applications', icon: Users },
   { href: '/dashboard/stock-requests', label: 'Stock Requests', icon: Package },
   { href: '/dashboard/sales', label: 'Sales', icon: ShoppingCart },
   { href: '/dashboard/delivery', label: 'Delivery', icon: Truck },
@@ -35,7 +37,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <p className="text-xs text-gray-500 mt-1">{user.role} · {user.employeeId}</p>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href;

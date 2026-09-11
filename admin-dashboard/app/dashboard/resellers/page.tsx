@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import ReviewApplicationModal from './review-modal';
 
 interface Application {
   id: string;
@@ -28,8 +29,6 @@ export default function ResellersPage() {
   const [apps, setApps] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Application | null>(null);
-  const [residenceId, setResidenceId] = useState('');
-  const [adminNotes, setAdminNotes] = useState('');
   const [message, setMessage] = useState('');
 
   const load = async () => {
@@ -43,24 +42,6 @@ export default function ResellersPage() {
   };
 
   useEffect(() => { load(); }, []);
-
-  const handleReview = async (status: number) => {
-    if (!selected) return;
-    try {
-      await api.put(`/api/ResellerApplications/${selected.id}/review`, {
-        status,
-        residenceId: status === 2 ? residenceId : null,
-        adminNotes,
-      });
-      setMessage(`Application ${statusLabels[status].toLowerCase()}.`);
-      setSelected(null);
-      setResidenceId('');
-      setAdminNotes('');
-      load();
-    } catch (err: any) {
-      setMessage(err.response?.data?.error || 'Failed');
-    }
-  };
 
   return (
     <div>
@@ -121,45 +102,15 @@ export default function ResellersPage() {
         </div>
       )}
 
-      {selected && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4">Review Application</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              {selected.firstName} {selected.lastName} · {selected.email}
-            </p>
-            <label className="block text-sm font-medium mb-1">Residence ID (required for approval)</label>
-            <input
-              type="text"
-              placeholder="e.g. 11111111-2222-3333-4444-555555555555"
-              value={residenceId}
-              onChange={(e) => setResidenceId(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg mb-3 text-sm font-mono"
-            />
-            <p className="text-xs text-gray-500 mb-3">
-              Get a residence ID from the database: <code>sqlite3 /opt/bakery/bakery.db "SELECT Id FROM Residences LIMIT 1;"</code>
-            </p>
-            <label className="block text-sm font-medium mb-1">Admin Notes (optional)</label>
-            <textarea
-              value={adminNotes}
-              onChange={(e) => setAdminNotes(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg mb-4"
-              rows={2}
-            />
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setSelected(null)} className="px-4 py-2 text-sm bg-gray-100 rounded-lg">
-                Cancel
-              </button>
-              <button onClick={() => handleReview(3)} className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg">
-                Reject
-              </button>
-              <button onClick={() => handleReview(2)} className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg">
-                Approve
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ReviewApplicationModal
+        application={selected}
+        isOpen={!!selected}
+        onClose={() => setSelected(null)}
+        onSuccess={() => {
+          setMessage('Application processed successfully.');
+          load();
+        }}
+      />
     </div>
   );
 }
