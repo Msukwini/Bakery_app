@@ -479,3 +479,5 @@
 /workspaces/Bakery_app/BakeryApp.Api/obj/Release/net10.0/linux-x64/BakeryApp.Api.pdb
 /workspaces/Bakery_app/BakeryApp.Api/obj/Release/net10.0/linux-x64/BakeryApp.Api.genruntimeconfig.cache
 /workspaces/Bakery_app/BakeryApp.Api/obj/Release/net10.0/linux-x64/ref/BakeryApp.Api.dll
+/workspaces/Bakery_app/BakeryApp.Api/bin/Release/net10.0/linux-x64/SendGrid.dll
+/workspaces/Bakery_app/BakeryApp.Api/bin/Release/net10.0/linux-x64/StarkbankEcdsa.dll

@@ -120,7 +120,7 @@ public class OrderService : IOrderService
         if (!string.IsNullOrEmpty(adminNotes))
             order.AdminNotes = adminNotes;
         await _context.SaveChangesAsync();
-        await _notificationService.SendOrderStatusUpdateAsync(order, adminNotes);
+        await _notificationService.NotifyOrderStatusChangeAsync(order, adminNotes);
         return order;
     }
 

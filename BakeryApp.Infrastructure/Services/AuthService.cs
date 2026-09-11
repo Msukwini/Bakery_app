@@ -92,7 +92,7 @@ public class AuthService : IAuthService
         };
 
         // Generate unique Employee Code
-        var prefix = role == EmployeeRoleType.Admin ? "ADM" : "RES";
+        var prefix = role switch { EmployeeRoleType.Admin => "ADM", EmployeeRoleType.Reseller => "RES", EmployeeRoleType.Delivery => "DEL", _ => "UNK" };
         var count = await _context.EmployeeIds.CountAsync(e => e.RoleType == role) + 1;
         var code = $"{prefix}-{count:D4}";
 

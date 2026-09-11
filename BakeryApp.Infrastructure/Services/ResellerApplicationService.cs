@@ -16,10 +16,12 @@ public interface IResellerApplicationService
 public class ResellerApplicationService : IResellerApplicationService
 {
     private readonly BakeryDbContext _context;
+    private readonly INotificationService _notificationService;
 
-    public ResellerApplicationService(BakeryDbContext context)
+    public ResellerApplicationService(BakeryDbContext context, INotificationService notificationService)
     {
         _context = context;
+        _notificationService = notificationService;
     }
 
     public async Task<ResellerApplication> SubmitApplicationAsync(ResellerApplication application)
@@ -34,6 +36,7 @@ public class ResellerApplicationService : IResellerApplicationService
 
         _context.ResellerApplications.Add(application);
         await _context.SaveChangesAsync();
+        await _notificationService.NotifyResellerApplicationSubmittedAsync(application);
         return application;
     }
 

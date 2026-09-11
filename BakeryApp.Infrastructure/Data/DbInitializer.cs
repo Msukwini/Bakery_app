@@ -12,7 +12,8 @@ public static class DbInitializer
         await dbContext.Database.EnsureCreatedAsync();
 
         // 1. Seed Admin Account
-        if (!await dbContext.Persons.AnyAsync(p => p.Email == "admin@bakeryapp.com"))
+        if (!await dbContext.Persons.AnyAsync(p => p.Email == "admin@bakeryapp.com")
+                && !await dbContext.EmployeeIds.AnyAsync(e => e.Code == "ADM-001"))
         {
             var adminPerson = new Person
             {

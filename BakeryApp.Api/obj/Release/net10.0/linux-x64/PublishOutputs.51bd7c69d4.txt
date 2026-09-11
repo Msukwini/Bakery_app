@@ -352,13 +352,16 @@
 /workspaces/Bakery_app/publish/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
 /workspaces/Bakery_app/publish/Microsoft.IdentityModel.Tokens.dll
 /workspaces/Bakery_app/publish/Microsoft.OpenApi.dll
+/workspaces/Bakery_app/publish/Newtonsoft.Json.dll
 /workspaces/Bakery_app/publish/Npgsql.dll
 /workspaces/Bakery_app/publish/Npgsql.EntityFrameworkCore.PostgreSQL.dll
+/workspaces/Bakery_app/publish/SendGrid.dll
 /workspaces/Bakery_app/publish/SharpGrip.FluentValidation.AutoValidation.Mvc.dll
 /workspaces/Bakery_app/publish/SharpGrip.FluentValidation.AutoValidation.Shared.dll
 /workspaces/Bakery_app/publish/SQLitePCLRaw.batteries_v2.dll
 /workspaces/Bakery_app/publish/SQLitePCLRaw.core.dll
 /workspaces/Bakery_app/publish/SQLitePCLRaw.provider.e_sqlite3.dll
+/workspaces/Bakery_app/publish/StarkbankEcdsa.dll
 /workspaces/Bakery_app/publish/Swashbuckle.AspNetCore.Swagger.dll
 /workspaces/Bakery_app/publish/Swashbuckle.AspNetCore.SwaggerGen.dll
 /workspaces/Bakery_app/publish/Swashbuckle.AspNetCore.SwaggerUI.dll

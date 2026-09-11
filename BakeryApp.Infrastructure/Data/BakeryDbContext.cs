@@ -20,6 +20,10 @@ public class BakeryDbContext : DbContext
     public DbSet<CommissionLedgerEntry> CommissionLedgerEntries => Set<CommissionLedgerEntry>();
     public DbSet<DeliveryAssignment> DeliveryAssignments => Set<DeliveryAssignment>();
     public DbSet<BuyerOrder> BuyerOrders => Set<BuyerOrder>();
+    public DbSet<ResellerStockRequest> ResellerStockRequests => Set<ResellerStockRequest>();
+    public DbSet<CashCollection> CashCollections => Set<CashCollection>();
+    public DbSet<Deposit> Deposits => Set<Deposit>();
+    public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<ResellerApplication> ResellerApplications => Set<ResellerApplication>();

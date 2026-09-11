@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import {
   LayoutDashboard, Users, Package, ShoppingCart,
-  Truck, DollarSign, FileText, LogOut, Home
+  Truck, DollarSign, FileText, LogOut, Home, Mail
 } from 'lucide-react';
 
 const navItems = [
@@ -17,6 +17,7 @@ const navItems = [
   { href: '/dashboard/deposits', label: 'Deposits', icon: DollarSign },
   { href: '/dashboard/orders', label: 'Orders', icon: Home },
   { href: '/dashboard/reports', label: 'Reports', icon: FileText },
+  { href: '/dashboard/notifications', label: 'Notifications', icon: Mail },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
