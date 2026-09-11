@@ -44,11 +44,13 @@ public class StockRequestService : IStockRequestService
 {
     private readonly BakeryDbContext _context;
     private readonly IInventoryService _inventoryService;
+    private readonly INotificationService _notificationService;
 
-    public StockRequestService(BakeryDbContext context, IInventoryService inventoryService)
+    public StockRequestService(BakeryDbContext context, IInventoryService inventoryService, INotificationService notificationService)
     {
         _context = context;
         _inventoryService = inventoryService;
+        _notificationService = notificationService;
     }
 
     public async Task<ResellerStockRequest> CreateRequestAsync(Guid resellerEmployeeId, Guid productVariantId, int requestedQuantity, string? resellerNotes)
@@ -77,6 +79,7 @@ public class StockRequestService : IStockRequestService
 
         _context.ResellerStockRequests.Add(request);
         await _context.SaveChangesAsync();
+        await _notificationService.NotifyStockRequestSubmittedAsync(request);
         return request;
     }
 
@@ -138,6 +141,7 @@ public class StockRequestService : IStockRequestService
         request.InventoryLedgerEntryId = ledgerEntry.Id;
 
         await _context.SaveChangesAsync();
+        await _notificationService.NotifyStockRequestApprovedAsync(request);
         return request;
     }
 
@@ -158,6 +162,7 @@ public class StockRequestService : IStockRequestService
         request.ReviewedByAdminId = admin.Id;
 
         await _context.SaveChangesAsync();
+        await _notificationService.NotifyStockRequestRejectedAsync(request);
         return request;
     }
 

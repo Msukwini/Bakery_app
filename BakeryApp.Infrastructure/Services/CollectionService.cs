@@ -21,8 +21,13 @@ public interface ICollectionService
 public class CollectionService : ICollectionService
 {
     private readonly BakeryDbContext _context;
+    private readonly INotificationService _notificationService;
 
-    public CollectionService(BakeryDbContext context) { _context = context; }
+    public CollectionService(BakeryDbContext context, INotificationService notificationService)
+    {
+        _context = context;
+        _notificationService = notificationService;
+    }
 
     public async Task<CashCollection> RecordCollectionAsync(Guid deliveryEmployeeId, DateTime collectionDate, decimal collectedAmount, VarianceReason varianceReason, string? varianceNotes)
     {
@@ -117,6 +122,7 @@ public class CollectionService : ICollectionService
             BankReference = bankReference,
             Status = DepositStatus.SUBMITTED
         };
+        await _notificationService.NotifyDepositSubmittedAsync(deposit);
 
         _context.Deposits.Add(deposit);
         await _context.SaveChangesAsync();

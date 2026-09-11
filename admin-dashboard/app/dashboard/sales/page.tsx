@@ -3,6 +3,14 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 
+interface Reseller {
+  id: string;
+  code: string;
+  name: string;
+  email: string;
+  residenceName: string | null;
+}
+
 interface Commission {
   id: string;
   productName: string;
@@ -15,24 +23,32 @@ interface Commission {
 }
 
 export default function SalesPage() {
-  const [resellerId, setResellerId] = useState('');
+  const [resellers, setResellers] = useState<Reseller[]>([]);
+  const [selectedId, setSelectedId] = useState('');
   const [ledger, setLedger] = useState<Commission[]>([]);
   const [balance, setBalance] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
+  useEffect(() => {
+    api.get('/api/Admin/resellers')
+      .then((res) => setResellers(res.data))
+      .catch(() => setMessage('Failed to load resellers'));
+  }, []);
+
   const load = async () => {
-    if (!resellerId) return;
+    if (!selectedId) return;
     setLoading(true);
+    setMessage('');
     try {
       const [l, b] = await Promise.all([
-        api.get(`/api/Sales/commission/${resellerId}`),
-        api.get(`/api/Sales/balance/${resellerId}`),
+        api.get(`/api/Sales/commission/${selectedId}`),
+        api.get(`/api/Sales/balance/${selectedId}`),
       ]);
       setLedger(l.data);
       setBalance(b.data);
     } catch (err: any) {
-      setMessage(err.response?.data?.error || 'Failed to load');
+      setMessage(err.response?.data?.error || 'Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -43,22 +59,28 @@ export default function SalesPage() {
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Sales & Commission</h1>
 
       <div className="bg-white p-6 rounded-xl border mb-6">
-        <label className="block text-sm font-medium mb-2">Reseller Employee ID (GUID)</label>
+        <label className="block text-sm font-medium mb-2">Select Reseller</label>
         <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="9ecfb906-6c94-4271-87d9-ef288592386c"
-            value={resellerId}
-            onChange={(e) => setResellerId(e.target.value)}
-            className="flex-1 px-3 py-2 border rounded-lg text-sm font-mono"
-          />
-          <button onClick={load} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm">
+          <select
+            value={selectedId}
+            onChange={(e) => setSelectedId(e.target.value)}
+            className="flex-1 px-3 py-2 border rounded-lg text-sm bg-white"
+          >
+            <option value="">— Choose a reseller —</option>
+            {resellers.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.code} · {r.name} {r.residenceName ? `(${r.residenceName})` : ''}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={load}
+            disabled={!selectedId}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-lg text-sm"
+          >
             Load
           </button>
         </div>
-        <p className="text-xs text-gray-500 mt-2">
-          Tip: RES-0001 = 9ecfb906-6c94-4271-87d9-ef288592386c
-        </p>
       </div>
 
       {message && <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg">{message}</div>}
@@ -80,7 +102,7 @@ export default function SalesPage() {
         </div>
       )}
 
-      {loading ? <p>Loading...</p> : ledger.length > 0 && (
+      {loading ? <p className="text-gray-500">Loading...</p> : ledger.length > 0 && (
         <div className="bg-white rounded-xl border overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-600 text-left">
