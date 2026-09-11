@@ -123,6 +123,17 @@ public class ResellerApplicationService : IResellerApplicationService
             await _context.SaveChangesAsync();
 
             application.ApprovedEmployeeId = employee.Id;
+
+            // Generate password setup token
+            var setupToken = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+            person.PasswordSetupToken = setupToken;
+            person.PasswordSetupTokenExpiry = DateTime.UtcNow.AddDays(7);
+            person.HasSetPassword = false;
+            await _context.SaveChangesAsync();
+
+            var frontendUrl = "https://bakery-app-git-main-astronoteys-projects.vercel.app";
+            var setupLink = $"{frontendUrl}/setup-password?token={setupToken}";
+            await _notificationService.NotifyResellerSetupLinkAsync(person.Email, person.FirstName, setupLink);
             application.ResidenceId = residenceId.Value;
         }
         else

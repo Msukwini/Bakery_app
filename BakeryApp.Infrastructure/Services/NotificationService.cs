@@ -13,6 +13,7 @@ public interface INotificationService
     Task NotifyStockRequestRejectedAsync(ResellerStockRequest request);
     Task NotifyLowStockAsync(string productName, string variantName, int currentStock);
     Task NotifyResellerApplicationSubmittedAsync(ResellerApplication application);
+    Task NotifyResellerSetupLinkAsync(string email, string firstName, string setupLink);
 }
 
 public class NotificationService : INotificationService
@@ -79,6 +80,25 @@ public class NotificationService : INotificationService
         var subject = $"New Reseller Application - {application.FirstName} {application.LastName}";
         var body = $"<h2>New Application</h2><p>{application.FirstName} {application.LastName}</p><p>Email: {application.Email}</p><p>Phone: {application.PhoneNumber}</p>";
         await _email.SendAsync(AdminEmail, subject, body, "RESELLER_APPLICATION");
+    }
+
+    public async Task NotifyResellerSetupLinkAsync(string email, string firstName, string setupLink)
+    {
+        var subject = "Welcome to Ndlovu Bakery - Set Your Password";
+        var body = "<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;'>" +
+            "<h2 style='color:#1e40af;'>Welcome, " + firstName + "!</h2>" +
+            "<p>Your reseller application has been approved.</p>" +
+            "<p>Click the button below to set your password:</p>" +
+            "<p style='text-align:center;margin:30px 0;'>" +
+            "<a href='" + setupLink + "' style='background:#1e40af;color:white;padding:14px 28px;text-decoration:none;border-radius:8px;font-weight:bold;'>Set My Password</a>" +
+            "</p>" +
+            "<p style='color:#666;font-size:13px;'>Or copy this link: " + setupLink + "</p>" +
+            "<p style='color:#999;font-size:12px;margin-top:30px;'>This link expires in 7 days.</p>" +
+            "<hr style='border:none;border-top:1px solid #eee;margin:30px 0;'/>" +
+            "<p style='color:#666;font-size:12px;'>Ndlovu Bakery - Durban, KZN</p>" +
+            "</div>";
+
+        await _email.SendAsync(email, subject, body, "RESELLER_SETUP_LINK");
     }
 
     private async Task<string?> GetResellerEmailAsync(Guid resellerEmployeeId)

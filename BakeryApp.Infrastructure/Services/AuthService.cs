@@ -16,6 +16,8 @@ public interface IAuthService
     Task<string> GenerateJwtToken(EmployeeId employee);
     Task<EmployeeId?> ValidateUserCredentials(string email, string password);
     Task<EmployeeId> RegisterUserAsync(string firstName, string lastName, string email, string phone, string password, EmployeeRoleType role, Guid? residenceId);
+    Task<bool> VerifySetupTokenAsync(string token);
+    Task SetPasswordAsync(string token, string newPassword);
 }
 
 public class AuthService : IAuthService
@@ -36,8 +38,7 @@ public class AuthService : IAuthService
             .FirstOrDefaultAsync(p => p.Email == email);
 
         if (person == null) return null;
-
-        // Verify password using BCrypt
+        if (string.IsNullOrEmpty(person.PasswordHash)) return null;
         if (!BCrypt.Net.BCrypt.Verify(password, person.PasswordHash)) return null;
 
         return person.EmployeeIds.FirstOrDefault(e => e.IsActive);
@@ -46,7 +47,7 @@ public class AuthService : IAuthService
     public async Task<string> GenerateJwtToken(EmployeeId employee)
     {
         var person = await _context.Persons.FindAsync(employee.PersonId);
-        
+
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, employee.Id.ToString()),
@@ -57,7 +58,7 @@ public class AuthService : IAuthService
         };
 
         var jwtSettings = _configuration.GetSection("Jwt");
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Secret"] 
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Secret"]
             ?? "YourSuperSecretKeyHere_MustBeAtLeast32BytesLong!"));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -74,25 +75,30 @@ public class AuthService : IAuthService
 
     public async Task<EmployeeId> RegisterUserAsync(string firstName, string lastName, string email, string phone, string password, EmployeeRoleType role, Guid? residenceId)
     {
-        // Check if email already exists
         var existing = await _context.Persons.AnyAsync(p => p.Email == email);
         if (existing) throw new Exception("Email already registered.");
 
-        // Hash the password using BCrypt
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
 
-        // Create Person
         var person = new Person
         {
             FirstName = firstName,
             LastName = lastName,
             Email = email,
             PhoneNumber = phone,
-            PasswordHash = passwordHash
+            PasswordHash = passwordHash,
+            HasSetPassword = true
         };
 
-        // Generate unique Employee Code
-        var prefix = role switch { EmployeeRoleType.Admin => "ADM", EmployeeRoleType.Reseller => "RES", EmployeeRoleType.Delivery => "DEL", EmployeeRoleType.Applicant => "APP", _ => "UNK" };
+        var prefix = role switch
+        {
+            EmployeeRoleType.Admin => "ADM",
+            EmployeeRoleType.Reseller => "RES",
+            EmployeeRoleType.Delivery => "DEL",
+            EmployeeRoleType.Applicant => "APP",
+            _ => "UNK"
+        };
+
         var count = await _context.EmployeeIds.CountAsync(e => e.RoleType == role) + 1;
         var code = $"{prefix}-{count:D4}";
 
@@ -111,5 +117,31 @@ public class AuthService : IAuthService
         await _context.SaveChangesAsync();
 
         return employee;
+    }
+
+    public async Task<bool> VerifySetupTokenAsync(string token)
+    {
+        var person = await _context.Persons
+            .FirstOrDefaultAsync(p => p.PasswordSetupToken == token);
+        if (person == null) return false;
+        if (person.PasswordSetupTokenExpiry == null) return false;
+        if (person.PasswordSetupTokenExpiry < DateTime.UtcNow) return false;
+        return true;
+    }
+
+    public async Task SetPasswordAsync(string token, string newPassword)
+    {
+        var person = await _context.Persons
+            .FirstOrDefaultAsync(p => p.PasswordSetupToken == token);
+        if (person == null) throw new Exception("Invalid or expired token.");
+        if (person.PasswordSetupTokenExpiry == null || person.PasswordSetupTokenExpiry < DateTime.UtcNow)
+            throw new Exception("Token has expired.");
+
+        person.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        person.PasswordSetupToken = null;
+        person.PasswordSetupTokenExpiry = null;
+        person.HasSetPassword = true;
+
+        await _context.SaveChangesAsync();
     }
 }
