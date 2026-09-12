@@ -17,10 +17,13 @@ public class SalesService : ISalesService
     private readonly BakeryDbContext _context;
     private readonly IInventoryService _inventoryService;
 
-    public SalesService(BakeryDbContext context, IInventoryService inventoryService)
+    private readonly IMilestoneService _milestoneService;
+
+    public SalesService(BakeryDbContext context, IInventoryService inventoryService, IMilestoneService milestoneService)
     {
         _context = context;
         _inventoryService = inventoryService;
+        _milestoneService = milestoneService;
     }
 
     public async Task<ResellerSale> RecordSaleAsync(Guid resellerEmployeeId, Guid productVariantId, int quantity, decimal unitPriceAtSale, Guid? employeeId = null)
@@ -84,6 +87,9 @@ public class SalesService : ISalesService
             $"Sale by {reseller.Code} - Sale ID: {sale.Id}",
             employeeId
         );
+
+        // Check milestone triggers
+        await _milestoneService.CheckAndTriggerAsync(resellerEmployeeId, productVariantId);
 
         return sale;
     }

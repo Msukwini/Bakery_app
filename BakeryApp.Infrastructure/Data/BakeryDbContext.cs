@@ -26,6 +26,8 @@ public class BakeryDbContext : DbContext
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<MilestoneConfig> MilestoneConfigs => Set<MilestoneConfig>();
+    public DbSet<MilestoneAlert> MilestoneAlerts => Set<MilestoneAlert>();
     public DbSet<ResellerApplication> ResellerApplications => Set<ResellerApplication>();
     public DbSet<DeliveryEarning> DeliveryEarnings => Set<DeliveryEarning>();
 

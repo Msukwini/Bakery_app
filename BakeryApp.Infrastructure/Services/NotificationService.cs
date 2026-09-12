@@ -15,6 +15,7 @@ public interface INotificationService
     Task NotifyResellerApplicationSubmittedAsync(ResellerApplication application);
     Task NotifyResellerSetupLinkAsync(string email, string firstName, string setupLink);
     Task SendPasswordResetEmailAsync(string email, string firstName, string resetLink);
+    Task NotifyMilestoneReachedAsync(string resellerCode, string resellerName, string productName, string variantName, int units, decimal bonus, string periodKey);
 }
 
 public class NotificationService : INotificationService
@@ -117,6 +118,25 @@ public class NotificationService : INotificationService
             "<p style='color:#666;font-size:12px;'>Ndlovu Bakery - Durban, KZN</p>" +
             "</div>";
         await _email.SendAsync(email, subject, body, "PASSWORD_RESET");
+    }
+
+    public async Task NotifyMilestoneReachedAsync(string resellerCode, string resellerName, string productName, string variantName, int units, decimal bonus, string periodKey)
+    {
+        var subject = $"🎉 Milestone Reached - {resellerCode}";
+        var body = "<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;'>" +
+            "<h2 style='color:#16a34a;'>Milestone Achieved!</h2>" +
+            "<p><strong>" + resellerName + " (" + resellerCode + ")</strong> has reached a sales milestone.</p>" +
+            "<table style='border-collapse:collapse;margin:20px 0;'>" +
+            "<tr><td style='padding:8px;color:#666;'>Product</td><td style='padding:8px;font-weight:bold;'>" + productName + " · " + variantName + "</td></tr>" +
+            "<tr><td style='padding:8px;color:#666;'>Units Sold</td><td style='padding:8px;font-weight:bold;'>" + units + "</td></tr>" +
+            "<tr><td style='padding:8px;color:#666;'>Period</td><td style='padding:8px;font-weight:bold;'>" + periodKey + "</td></tr>" +
+            "<tr><td style='padding:8px;color:#666;'>Bonus Owed</td><td style='padding:8px;font-weight:bold;color:#16a34a;'>R " + bonus.ToString("F2") + "</td></tr>" +
+            "</table>" +
+            "<p>Review and pay the bonus in the Milestones dashboard.</p>" +
+            "<hr style='border:none;border-top:1px solid #eee;margin:30px 0;'/>" +
+            "<p style='color:#666;font-size:12px;'>Ndlovu Bakery - Durban, KZN</p>" +
+            "</div>";
+        await _email.SendAsync(AdminEmail, subject, body, "MILESTONE_REACHED");
     }
 
     private async Task<string?> GetResellerEmailAsync(Guid resellerEmployeeId)

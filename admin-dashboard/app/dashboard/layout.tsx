@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth';
 import {
   LayoutDashboard, Users, Package, ShoppingCart,
   Truck, DollarSign, FileText, LogOut, Home, Mail, UserCog, Building2, Menu, X,
-  TrendingUp, ClipboardList, User, UsersRound, Wallet
+  TrendingUp, ClipboardList, User, UsersRound, Wallet, Award
 } from 'lucide-react';
 
 const adminNav = [
@@ -17,6 +17,7 @@ const adminNav = [
   { href: '/dashboard/residences', label: 'Residences', icon: Building2 },
   { href: '/dashboard/products', label: 'Products', icon: Package },
   { href: '/dashboard/commission-rules', label: 'Commission Rules', icon: DollarSign },
+  { href: '/dashboard/milestones', label: 'Milestones', icon: Award },
   { href: '/dashboard/resellers', label: 'Applications', icon: Users },
   { href: '/dashboard/stock-requests', label: 'Stock Requests', icon: Package },
   { href: '/dashboard/sales', label: 'Sales', icon: ShoppingCart },
