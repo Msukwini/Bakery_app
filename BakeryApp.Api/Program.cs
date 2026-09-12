@@ -63,6 +63,7 @@ builder.Services.AddScoped<ISalesService, SalesService>();
 builder.Services.AddScoped<ISettlementService, SettlementService>();
 builder.Services.AddScoped<IStockRequestService, StockRequestService>();
 builder.Services.AddScoped<ICollectionService, CollectionService>();
+builder.Services.AddScoped<IFinancialService, FinancialService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IDeliveryService, DeliveryService>();

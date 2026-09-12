@@ -22,6 +22,7 @@ const adminNav = [
   { href: '/dashboard/delivery-assignments', label: 'Delivery Assignments', icon: UsersRound },
   { href: '/dashboard/deposits', label: 'Deposits', icon: DollarSign },
   { href: '/dashboard/orders', label: 'Orders', icon: Home },
+  { href: '/dashboard/finance', label: 'Finance', icon: DollarSign },
   { href: '/dashboard/reports', label: 'Reports', icon: FileText },
   { href: '/dashboard/notifications', label: 'Notifications', icon: Mail },
   { href: '/dashboard/profile', label: 'My Profile', icon: User },
