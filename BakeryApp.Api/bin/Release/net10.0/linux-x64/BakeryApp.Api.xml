@@ -4,6 +4,11 @@
         <name>BakeryApp.Api</name>
     </assembly>
     <members>
+        <member name="M:BakeryApp.Api.Controllers.DeliveryController.ListAllAssignments(System.Boolean)">
+            <summary>
+            List all assignments (for admin dashboard)
+            </summary>
+        </member>
         <member name="M:BakeryApp.Api.Controllers.ProfileController.GetPublicProfile(System.Guid)">
             <summary>
             Public-safe profile — first name, last name, phone, picture flag only

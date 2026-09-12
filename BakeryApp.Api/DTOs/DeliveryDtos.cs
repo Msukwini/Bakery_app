@@ -6,7 +6,8 @@ public class AssignResellerRequest
 {
     public Guid ResellerEmployeeId { get; set; }
     public Guid DeliveryEmployeeId { get; set; }
-    public AssignmentType Type { get; set; }
+    public Guid? PermanentDeliveryEmployeeId { get; set; } // Only for TEMPORARY
+    public AssignmentType Type { get; set; } // 0=PERMANENT, 1=TEMPORARY
     public DateTime StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     public string? Reason { get; set; }
@@ -54,7 +55,6 @@ public class DeliveryBalanceResponse
     public decimal TotalPaid { get; set; }
 }
 
-// NEW: Payout DTOs
 public class DeliveryPayoutRequest
 {
     public Guid DeliveryEmployeeId { get; set; }

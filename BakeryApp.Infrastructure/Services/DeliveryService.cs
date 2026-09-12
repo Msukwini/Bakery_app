@@ -7,19 +7,15 @@ namespace BakeryApp.Infrastructure.Services;
 
 public interface IDeliveryService
 {
-    // Assignments
-    Task<DeliveryAssignment> AssignResellerAsync(Guid resellerEmployeeId, Guid deliveryEmployeeId, AssignmentType type, DateTime startDate, DateTime? endDate, string? reason, Guid? createdByAdminId);
+    Task<DeliveryAssignment> AssignResellerAsync(Guid resellerEmployeeId, Guid deliveryEmployeeId, Guid? permanentDeliveryEmployeeId, AssignmentType type, DateTime startDate, DateTime? endDate, string? reason, Guid? createdByAdminId);
     Task<List<DeliveryAssignment>> GetActiveAssignmentsForResellerAsync(Guid resellerEmployeeId, DateTime? date = null);
     Task<List<DeliveryAssignment>> GetAssignmentsForDeliveryEmployeeAsync(Guid deliveryEmployeeId, DateTime? date = null);
     Task<DeliveryAssignment> UpdateAssignmentAsync(Guid assignmentId, DateTime? endDate, string? reason);
     Task<List<DeliveryAssignment>> GetAssignmentHistoryForResellerAsync(Guid resellerEmployeeId);
-
-    // Earnings
+    Task<List<DeliveryAssignment>> GetAllAssignmentsAsync(bool activeOnly);
     Task<DeliveryEarning> RecordDeliveryCompletionAsync(Guid deliveryEmployeeId, DateTime completionDate, decimal? ratePerDay = null);
     Task<List<DeliveryEarning>> GetEarningsLedgerAsync(Guid deliveryEmployeeId);
     Task<decimal> GetOutstandingEarningsAsync(Guid deliveryEmployeeId);
-
-    // Payout (new)
     Task<List<DeliveryEarning>> ProcessDeliveryPayoutAsync(Guid deliveryEmployeeId, decimal amount, string? notes = null);
 }
 
@@ -33,9 +29,7 @@ public class DeliveryService : IDeliveryService
         _context = context;
     }
 
-    // ============ ASSIGNMENTS ============
-
-    public async Task<DeliveryAssignment> AssignResellerAsync(Guid resellerEmployeeId, Guid deliveryEmployeeId, AssignmentType type, DateTime startDate, DateTime? endDate, string? reason, Guid? createdByAdminId)
+    public async Task<DeliveryAssignment> AssignResellerAsync(Guid resellerEmployeeId, Guid deliveryEmployeeId, Guid? permanentDeliveryEmployeeId, AssignmentType type, DateTime startDate, DateTime? endDate, string? reason, Guid? createdByAdminId)
     {
         var reseller = await _context.EmployeeIds
             .FirstOrDefaultAsync(e => e.Id == resellerEmployeeId && e.RoleType == EmployeeRoleType.Reseller && e.IsActive);
@@ -47,6 +41,7 @@ public class DeliveryService : IDeliveryService
 
         if (type == AssignmentType.PERMANENT)
         {
+            // End any existing permanent assignment
             var activePermanent = await _context.DeliveryAssignments
                 .FirstOrDefaultAsync(a => a.ResellerEmployeeId == resellerEmployeeId && a.Type == AssignmentType.PERMANENT && a.EndDate == null);
             if (activePermanent != null)
@@ -55,26 +50,63 @@ public class DeliveryService : IDeliveryService
                 activePermanent.Reason = "Reassigned permanently";
                 _context.DeliveryAssignments.Update(activePermanent);
             }
+
+            var assignment = new DeliveryAssignment
+            {
+                ResellerEmployeeId = resellerEmployeeId,
+                Reseller = reseller,
+                PermanentDeliveryEmployeeId = deliveryEmployeeId,
+                PermanentDeliveryEmployee = deliveryEmp,
+                ActualDeliveryEmployeeId = deliveryEmployeeId,
+                ActualDeliveryEmployee = deliveryEmp,
+                Type = AssignmentType.PERMANENT,
+                StartDate = startDate,
+                EndDate = endDate,
+                Reason = reason ?? "",
+                CreatedByAdminId = createdByAdminId
+            };
+
+            _context.DeliveryAssignments.Add(assignment);
+            await _context.SaveChangesAsync();
+            return assignment;
         }
-
-        var assignment = new DeliveryAssignment
+        else // TEMPORARY
         {
-            ResellerEmployeeId = resellerEmployeeId,
-            Reseller = reseller,
-            PermanentDeliveryEmployeeId = deliveryEmployeeId,
-            PermanentDeliveryEmployee = deliveryEmp,
-            ActualDeliveryEmployeeId = (type == AssignmentType.PERMANENT) ? deliveryEmployeeId : (Guid?)null,
-            ActualDeliveryEmployee = (type == AssignmentType.PERMANENT) ? deliveryEmp : null,
-            Type = type,
-            StartDate = startDate,
-            EndDate = endDate,
-            Reason = reason ?? "",
-            CreatedByAdminId = createdByAdminId
-        };
+            // Find the current permanent delivery employee (default if not specified)
+            Guid permId = permanentDeliveryEmployeeId ?? Guid.Empty;
+            if (permId == Guid.Empty)
+            {
+                var currentPerm = await _context.DeliveryAssignments
+                    .Where(a => a.ResellerEmployeeId == resellerEmployeeId && a.Type == AssignmentType.PERMANENT && a.EndDate == null)
+                    .OrderByDescending(a => a.StartDate)
+                    .FirstOrDefaultAsync();
+                if (currentPerm == null)
+                    throw new Exception("This reseller has no permanent delivery employee. Assign one permanently first.");
+                permId = currentPerm.PermanentDeliveryEmployeeId;
+            }
 
-        _context.DeliveryAssignments.Add(assignment);
-        await _context.SaveChangesAsync();
-        return assignment;
+            var permEmp = await _context.EmployeeIds.FindAsync(permId);
+            if (permEmp == null) throw new Exception("Permanent delivery employee not found.");
+
+            var assignment = new DeliveryAssignment
+            {
+                ResellerEmployeeId = resellerEmployeeId,
+                Reseller = reseller,
+                PermanentDeliveryEmployeeId = permId,
+                PermanentDeliveryEmployee = permEmp,
+                ActualDeliveryEmployeeId = deliveryEmployeeId,
+                ActualDeliveryEmployee = deliveryEmp,
+                Type = AssignmentType.TEMPORARY,
+                StartDate = startDate,
+                EndDate = endDate,
+                Reason = reason ?? "Temporary coverage",
+                CreatedByAdminId = createdByAdminId
+            };
+
+            _context.DeliveryAssignments.Add(assignment);
+            await _context.SaveChangesAsync();
+            return assignment;
+        }
     }
 
     public async Task<List<DeliveryAssignment>> GetActiveAssignmentsForResellerAsync(Guid resellerEmployeeId, DateTime? date = null)
@@ -124,7 +156,22 @@ public class DeliveryService : IDeliveryService
             .ToListAsync();
     }
 
-    // ============ EARNINGS ============
+    public async Task<List<DeliveryAssignment>> GetAllAssignmentsAsync(bool activeOnly)
+    {
+        var query = _context.DeliveryAssignments
+            .Include(a => a.Reseller).ThenInclude(e => e.Person)
+            .Include(a => a.PermanentDeliveryEmployee).ThenInclude(e => e.Person)
+            .Include(a => a.ActualDeliveryEmployee).ThenInclude(e => e.Person)
+            .AsQueryable();
+
+        if (activeOnly)
+        {
+            var today = DateTime.UtcNow.Date;
+            query = query.Where(a => a.StartDate <= today && (a.EndDate == null || a.EndDate >= today));
+        }
+
+        return await query.OrderByDescending(a => a.StartDate).ToListAsync();
+    }
 
     public async Task<DeliveryEarning> RecordDeliveryCompletionAsync(Guid deliveryEmployeeId, DateTime completionDate, decimal? ratePerDay = null)
     {
@@ -171,8 +218,6 @@ public class DeliveryService : IDeliveryService
         return earnings.Sum(e => e.AmountEarned - e.AmountPaid);
     }
 
-    // ============ PAYOUT (NEW) ============
-
     public async Task<List<DeliveryEarning>> ProcessDeliveryPayoutAsync(Guid deliveryEmployeeId, decimal amount, string? notes = null)
     {
         if (amount <= 0) throw new Exception("Payout amount must be positive.");
@@ -186,12 +231,11 @@ public class DeliveryService : IDeliveryService
             .OrderBy(e => e.EarningDate)
             .ToListAsync();
 
-        if (!unsettledEntries.Any())
-            throw new Exception("No outstanding earnings to pay.");
+        if (!unsettledEntries.Any()) throw new Exception("No outstanding earnings to pay.");
 
         var totalOutstanding = unsettledEntries.Sum(e => e.AmountEarned - e.AmountPaid);
         if (amount > totalOutstanding)
-            throw new Exception($"Amount exceeds outstanding balance. Outstanding: {totalOutstanding}, Requested: {amount}");
+            throw new Exception($"Amount exceeds outstanding balance. Outstanding: {totalOutstanding}");
 
         var remaining = amount;
         var updatedEntries = new List<DeliveryEarning>();
@@ -217,19 +261,6 @@ public class DeliveryService : IDeliveryService
         }
 
         await _context.SaveChangesAsync();
-
-        // Audit log
-        var auditLog = new AuditLog
-        {
-            Action = "DELIVERY_PAYOUT",
-            EntityType = "DeliveryEarning",
-            EntityId = deliveryEmployeeId.ToString(),
-            NewValue = $"Paid {amount} to {employee.Code}. Notes: {notes ?? "N/A"}",
-            Timestamp = DateTime.UtcNow
-        };
-        _context.AuditLogs.Add(auditLog);
-        await _context.SaveChangesAsync();
-
         return updatedEntries;
     }
 }

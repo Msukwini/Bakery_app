@@ -23,8 +23,6 @@ public class DeliveryController : ControllerBase
         _context = context;
     }
 
-    // ============ ASSIGNMENTS ============
-
     [HttpPost("assign")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> AssignReseller([FromBody] AssignResellerRequest request)
@@ -37,6 +35,7 @@ public class DeliveryController : ControllerBase
             var assignment = await _deliveryService.AssignResellerAsync(
                 request.ResellerEmployeeId,
                 request.DeliveryEmployeeId,
+                request.PermanentDeliveryEmployeeId,
                 request.Type,
                 request.StartDate,
                 request.EndDate,
@@ -52,6 +51,40 @@ public class DeliveryController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// List all assignments (for admin dashboard)
+    /// </summary>
+    [HttpGet("assignments")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ListAllAssignments([FromQuery] bool activeOnly = true)
+    {
+        var list = await _deliveryService.GetAllAssignmentsAsync(activeOnly);
+        var response = list.Select(a => new
+        {
+            id = a.Id,
+            resellerEmployeeId = a.ResellerEmployeeId,
+            resellerCode = a.Reseller?.Code ?? "Unknown",
+            resellerName = a.Reseller?.Person != null
+                ? $"{a.Reseller.Person.FirstName} {a.Reseller.Person.LastName}"
+                : "Unknown",
+            permanentDeliveryEmployeeId = a.PermanentDeliveryEmployeeId,
+            permanentDeliveryCode = a.PermanentDeliveryEmployee?.Code ?? "Unknown",
+            permanentDeliveryName = a.PermanentDeliveryEmployee?.Person != null
+                ? $"{a.PermanentDeliveryEmployee.Person.FirstName} {a.PermanentDeliveryEmployee.Person.LastName}"
+                : "Unknown",
+            actualDeliveryEmployeeId = a.ActualDeliveryEmployeeId,
+            actualDeliveryCode = a.ActualDeliveryEmployee?.Code,
+            actualDeliveryName = a.ActualDeliveryEmployee?.Person != null
+                ? $"{a.ActualDeliveryEmployee.Person.FirstName} {a.ActualDeliveryEmployee.Person.LastName}"
+                : null,
+            type = a.Type.ToString(),
+            startDate = a.StartDate,
+            endDate = a.EndDate,
+            reason = a.Reason
+        });
+        return Ok(response);
+    }
+
     [HttpGet("reseller/{resellerEmployeeId}/active")]
     [Authorize(Roles = "Admin,Reseller")]
     public async Task<IActionResult> GetActiveAssignmentsForReseller(Guid resellerEmployeeId, [FromQuery] DateTime? date)
@@ -60,7 +93,6 @@ public class DeliveryController : ControllerBase
         var currentUser = await _context.EmployeeIds.FirstOrDefaultAsync(e => e.Code == employeeCode);
         if (currentUser == null) return Unauthorized();
 
-        // Reseller can only view their own assignments
         if (currentUser.RoleType == EmployeeRoleType.Reseller && currentUser.Id != resellerEmployeeId)
             return Forbid("You can only view your own assignments.");
 
@@ -143,42 +175,6 @@ public class DeliveryController : ControllerBase
         return Ok(response);
     }
 
-    // ============ EARNINGS ============
-
-    [HttpPost("payout")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> ProcessDeliveryPayout([FromBody] DeliveryPayoutRequest request)
-    {
-        try
-        {
-            var employee = await _context.EmployeeIds
-                .FirstOrDefaultAsync(e => e.Id == request.DeliveryEmployeeId && e.RoleType == EmployeeRoleType.Delivery);
-            if (employee == null) return NotFound("Delivery employee not found.");
-
-            var updatedEntries = await _deliveryService.ProcessDeliveryPayoutAsync(
-                request.DeliveryEmployeeId,
-                request.Amount,
-                request.Notes
-            );
-
-            var newBalance = await _deliveryService.GetOutstandingEarningsAsync(request.DeliveryEmployeeId);
-
-            return Ok(new DeliveryPayoutResponse
-            {
-                DeliveryEmployeeId = request.DeliveryEmployeeId,
-                DeliveryEmployeeCode = employee.Code,
-                AmountPaid = request.Amount,
-                NewOutstandingBalance = newBalance,
-                EntriesSettled = updatedEntries.Count,
-                PayoutDate = DateTime.UtcNow
-            });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-    }
-
     [HttpPost("record-delivery")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> RecordDelivery([FromBody] RecordDeliveryRequest request)
@@ -190,7 +186,7 @@ public class DeliveryController : ControllerBase
                 request.CompletionDate,
                 request.DailyRate
             );
-            return Ok(new { id = earning.Id, message = "Delivery completion recorded successfully." });
+            return Ok(new { id = earning.Id, message = "Delivery completion recorded." });
         }
         catch (Exception ex)
         {
@@ -245,5 +241,39 @@ public class DeliveryController : ControllerBase
             TotalEarned = totalEarned,
             TotalPaid = totalPaid
         });
+    }
+
+    [HttpPost("payout")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ProcessDeliveryPayout([FromBody] DeliveryPayoutRequest request)
+    {
+        try
+        {
+            var employee = await _context.EmployeeIds
+                .FirstOrDefaultAsync(e => e.Id == request.DeliveryEmployeeId && e.RoleType == EmployeeRoleType.Delivery);
+            if (employee == null) return NotFound("Delivery employee not found.");
+
+            var updatedEntries = await _deliveryService.ProcessDeliveryPayoutAsync(
+                request.DeliveryEmployeeId,
+                request.Amount,
+                request.Notes
+            );
+
+            var newBalance = await _deliveryService.GetOutstandingEarningsAsync(request.DeliveryEmployeeId);
+
+            return Ok(new DeliveryPayoutResponse
+            {
+                DeliveryEmployeeId = request.DeliveryEmployeeId,
+                DeliveryEmployeeCode = employee.Code,
+                AmountPaid = request.Amount,
+                NewOutstandingBalance = newBalance,
+                EntriesSettled = updatedEntries.Count,
+                PayoutDate = DateTime.UtcNow
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 }

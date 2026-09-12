@@ -18,6 +18,7 @@ const adminNav = [
   { href: '/dashboard/stock-requests', label: 'Stock Requests', icon: Package },
   { href: '/dashboard/sales', label: 'Sales', icon: ShoppingCart },
   { href: '/dashboard/delivery', label: 'Delivery', icon: Truck },
+  { href: '/dashboard/delivery-assignments', label: 'Delivery Assignments', icon: UsersRound },
   { href: '/dashboard/deposits', label: 'Deposits', icon: DollarSign },
   { href: '/dashboard/orders', label: 'Orders', icon: Home },
   { href: '/dashboard/reports', label: 'Reports', icon: FileText },
