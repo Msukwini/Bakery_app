@@ -29,6 +29,21 @@
             List all assignments (for admin dashboard)
             </summary>
         </member>
+        <member name="M:BakeryApp.Api.Controllers.ForgotPasswordController.ForgotPassword(BakeryApp.Api.Controllers.ForgotPasswordRequest)">
+            <summary>
+            Request a password reset. Always returns success (doesn't reveal if account exists).
+            </summary>
+        </member>
+        <member name="M:BakeryApp.Api.Controllers.ForgotPasswordController.VerifyResetToken(System.String)">
+            <summary>
+            Verify a reset token is valid (used by the reset page on load).
+            </summary>
+        </member>
+        <member name="M:BakeryApp.Api.Controllers.ForgotPasswordController.ResetPassword(BakeryApp.Api.Controllers.ResetPasswordRequest)">
+            <summary>
+            Reset password using the token from the email.
+            </summary>
+        </member>
         <member name="M:BakeryApp.Api.Controllers.ProfileController.GetPublicProfile(System.Guid)">
             <summary>
             Public-safe profile — first name, last name, phone, picture flag only

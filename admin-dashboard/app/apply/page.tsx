@@ -6,6 +6,7 @@ import Link from 'next/link';
 export default function ApplyPage() {
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', phoneNumber: '',
+    password: '', confirmPassword: '',
     residenceName: '', roomNumber: '', estimatedResidencePopulation: '',
     universityName: '', studentEmail: '',
     preferredSellingArea: '', previousSalesExperience: '',
@@ -18,23 +19,38 @@ export default function ApplyPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(''); setLoading(true);
+    setError('');
+
+    if (form.password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    if (form.password !== form.confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    setLoading(true);
     try {
       const res = await fetch(`${apiUrl}/api/ResellerApplications`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
-          estimatedResidencePopulation: form.estimatedResidencePopulation ? parseInt(form.estimatedResidencePopulation) : null,
+          estimatedResidencePopulation: form.estimatedResidencePopulation
+            ? parseInt(form.estimatedResidencePopulation)
+            : null,
         }),
       });
+
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Submission failed');
       }
+
       setSubmitted(true);
     } catch (err: any) {
-      setError(err.message || 'Something went wrong');
+      setError(err.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -52,9 +68,10 @@ export default function ApplyPage() {
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Application Submitted!</h1>
           <p className="text-gray-600 mb-6 text-sm">
             We'll review your application and contact you at <strong>{form.email}</strong>.
+            You can log in now with your password to check status.
           </p>
           <Link href="/login" className="inline-block px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">
-            Staff Login
+            Go to Login
           </Link>
         </div>
       </div>
@@ -65,7 +82,9 @@ export default function ApplyPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-8 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-3"><img src="/logo.png" alt="Ndlovu Bakery" className="w-28 h-28 object-contain" /></div>
+          <div className="flex justify-center mb-3">
+            <img src="/logo.png" alt="Ndlovu Bakery" className="w-28 h-28 object-contain" />
+          </div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Ndlovu Bakery</h1>
           <p className="text-lg text-gray-600">Become a Reseller</p>
           <p className="text-sm text-gray-500 mt-2 max-w-lg mx-auto">
@@ -83,6 +102,16 @@ export default function ApplyPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input required type="email" label="Email" value={form.email} onChange={(v: string) => setForm({ ...form, email: v })} />
                 <Input required label="Phone Number" value={form.phoneNumber} onChange={(v: string) => setForm({ ...form, phoneNumber: v })} />
+              </div>
+            </Section>
+
+            <Section title="Set Your Password">
+              <p className="text-xs text-gray-500 -mt-2 mb-2">
+                Choose a password so you can log in and track your application.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input required type="password" label="Password" placeholder="Min 6 characters" value={form.password} onChange={(v: string) => setForm({ ...form, password: v })} />
+                <Input required type="password" label="Confirm Password" value={form.confirmPassword} onChange={(v: string) => setForm({ ...form, confirmPassword: v })} />
               </div>
             </Section>
 
@@ -121,7 +150,7 @@ export default function ApplyPage() {
         </div>
 
         <p className="text-center text-xs text-gray-500 mt-6">
-          Already a reseller? <Link href="/login" className="text-blue-600 hover:underline">Sign in here</Link>
+          Already have an account? <Link href="/login" className="text-blue-600 hover:underline">Sign in here</Link>
         </p>
       </div>
     </div>

@@ -14,6 +14,7 @@ public interface INotificationService
     Task NotifyLowStockAsync(string productName, string variantName, int currentStock);
     Task NotifyResellerApplicationSubmittedAsync(ResellerApplication application);
     Task NotifyResellerSetupLinkAsync(string email, string firstName, string setupLink);
+    Task SendPasswordResetEmailAsync(string email, string firstName, string resetLink);
 }
 
 public class NotificationService : INotificationService
@@ -97,8 +98,25 @@ public class NotificationService : INotificationService
             "<hr style='border:none;border-top:1px solid #eee;margin:30px 0;'/>" +
             "<p style='color:#666;font-size:12px;'>Ndlovu Bakery - Durban, KZN</p>" +
             "</div>";
-
         await _email.SendAsync(email, subject, body, "RESELLER_SETUP_LINK");
+    }
+
+    public async Task SendPasswordResetEmailAsync(string email, string firstName, string resetLink)
+    {
+        var subject = "Reset Your Ndlovu Bakery Password";
+        var body = "<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;'>" +
+            "<h2 style='color:#1e40af;'>Password Reset</h2>" +
+            "<p>Hi " + firstName + ",</p>" +
+            "<p>We received a request to reset your password. Click the button below to set a new one:</p>" +
+            "<p style='text-align:center;margin:30px 0;'>" +
+            "<a href='" + resetLink + "' style='background:#1e40af;color:white;padding:14px 28px;text-decoration:none;border-radius:8px;font-weight:bold;'>Reset Password</a>" +
+            "</p>" +
+            "<p style='color:#666;font-size:13px;'>Or copy this link: " + resetLink + "</p>" +
+            "<p style='color:#999;font-size:12px;margin-top:30px;'>This link expires in 1 hour. If you didn't request this, you can ignore this email.</p>" +
+            "<hr style='border:none;border-top:1px solid #eee;margin:30px 0;'/>" +
+            "<p style='color:#666;font-size:12px;'>Ndlovu Bakery - Durban, KZN</p>" +
+            "</div>";
+        await _email.SendAsync(email, subject, body, "PASSWORD_RESET");
     }
 
     private async Task<string?> GetResellerEmailAsync(Guid resellerEmployeeId)

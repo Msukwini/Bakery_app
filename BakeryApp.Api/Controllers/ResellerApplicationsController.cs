@@ -37,6 +37,7 @@ public class ResellerApplicationsController : ControllerBase
             Availability = request.Availability,
             ExpectedTimeAtResidence = request.ExpectedTimeAtResidence,
             AdditionalInfo = request.AdditionalInfo,
+            PasswordHash = !string.IsNullOrEmpty(request.Password) ? BCrypt.Net.BCrypt.HashPassword(request.Password) : null,
             Status = ApplicationStatus.PENDING,
             SubmittedAt = DateTime.UtcNow
         };

@@ -15,10 +15,15 @@ public class Person
     public string? UniversityName { get; set; }
     public string? StudentEmail { get; set; }
 
-    // Password setup
+    // Password setup (invite flow)
     public string? PasswordSetupToken { get; set; }
     public DateTime? PasswordSetupTokenExpiry { get; set; }
     public bool HasSetPassword { get; set; } = false;
+
+    // Password reset (forgot password)
+    public string? PasswordResetToken { get; set; }
+    public DateTime? PasswordResetTokenExpiry { get; set; }
+    public DateTime? PasswordResetRequestedAt { get; set; }
 
     public ICollection<EmployeeId> EmployeeIds { get; set; } = new List<EmployeeId>();
 }

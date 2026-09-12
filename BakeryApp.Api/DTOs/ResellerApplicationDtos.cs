@@ -15,6 +15,7 @@ public class SubmitApplicationRequest
     public string? PreviousSalesExperience { get; set; }
     public string? Availability { get; set; }
     public string? ExpectedTimeAtResidence { get; set; }
+    public string Password { get; set; } = string.Empty;
     public string? AdditionalInfo { get; set; }
 }
 

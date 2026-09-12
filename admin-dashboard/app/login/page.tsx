@@ -1,3 +1,4 @@
+import Link from 'next/link';
 'use client';
 
 import { useState } from 'react';
@@ -82,6 +83,9 @@ export default function LoginPage() {
           >
             {loading ? 'Signing in...' : 'Sign in'}
           </button>
+          <p className="text-center text-sm mt-4">
+            <Link href="/forgot-password" className="text-blue-600 hover:underline">Forgot password?</Link>
+          </p>
         </form>
       </div>
     </div>

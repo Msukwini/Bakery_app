@@ -18,6 +18,9 @@ public interface IAuthService
     Task<EmployeeId> RegisterUserAsync(string firstName, string lastName, string email, string phone, string password, EmployeeRoleType role, Guid? residenceId);
     Task<bool> VerifySetupTokenAsync(string token);
     Task SetPasswordAsync(string token, string newPassword);
+    Task<Person?> RequestPasswordResetAsync(string identifier);
+    Task<bool> VerifyResetTokenAsync(string token);
+    Task ResetPasswordAsync(string token, string newPassword);
 }
 
 public class AuthService : IAuthService
@@ -140,6 +143,58 @@ public class AuthService : IAuthService
         person.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
         person.PasswordSetupToken = null;
         person.PasswordSetupTokenExpiry = null;
+        person.HasSetPassword = true;
+
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<Person?> RequestPasswordResetAsync(string identifier)
+    {
+        var trimmed = identifier.Trim().ToLower();
+
+        // Find by email or phone number
+        var person = await _context.Persons
+            .FirstOrDefaultAsync(p => p.Email.ToLower() == trimmed || p.PhoneNumber == trimmed);
+
+        if (person == null) return null;
+
+        // Rate limit: 1 request per 60 seconds
+        if (person.PasswordResetRequestedAt.HasValue
+            && (DateTime.UtcNow - person.PasswordResetRequestedAt.Value).TotalSeconds < 60)
+        {
+            throw new Exception("Please wait 60 seconds before requesting another reset.");
+        }
+
+        var token = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+        person.PasswordResetToken = token;
+        person.PasswordResetTokenExpiry = DateTime.UtcNow.AddHours(1);
+        person.PasswordResetRequestedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return person;
+    }
+
+    public async Task<bool> VerifyResetTokenAsync(string token)
+    {
+        var person = await _context.Persons
+            .FirstOrDefaultAsync(p => p.PasswordResetToken == token);
+        if (person == null) return false;
+        if (person.PasswordResetTokenExpiry == null) return false;
+        if (person.PasswordResetTokenExpiry < DateTime.UtcNow) return false;
+        return true;
+    }
+
+    public async Task ResetPasswordAsync(string token, string newPassword)
+    {
+        var person = await _context.Persons
+            .FirstOrDefaultAsync(p => p.PasswordResetToken == token);
+        if (person == null) throw new Exception("Invalid or expired token.");
+        if (person.PasswordResetTokenExpiry == null || person.PasswordResetTokenExpiry < DateTime.UtcNow)
+            throw new Exception("Token has expired. Please request a new one.");
+
+        person.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        person.PasswordResetToken = null;
+        person.PasswordResetTokenExpiry = null;
         person.HasSetPassword = true;
 
         await _context.SaveChangesAsync();

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "oXJYU3EMnZk=",
+  "dgSpecHash": "5Lh9t1ML324=",
   "success": true,
   "projectFilePath": "/workspaces/Bakery_app/BakeryApp.Api/BakeryApp.Api.csproj",
   "expectedPackageFiles": [
@@ -60,7 +60,9 @@
     "/home/codespace/.nuget/packages/system.composition.hosting/9.0.0/system.composition.hosting.9.0.0.nupkg.sha512",
     "/home/codespace/.nuget/packages/system.composition.runtime/9.0.0/system.composition.runtime.9.0.0.nupkg.sha512",
     "/home/codespace/.nuget/packages/system.composition.typedparts/9.0.0/system.composition.typedparts.9.0.0.nupkg.sha512",
-    "/home/codespace/.nuget/packages/system.identitymodel.tokens.jwt/8.22.0/system.identitymodel.tokens.jwt.8.22.0.nupkg.sha512"
+    "/home/codespace/.nuget/packages/system.identitymodel.tokens.jwt/8.22.0/system.identitymodel.tokens.jwt.8.22.0.nupkg.sha512",
+    "/home/codespace/.nuget/packages/microsoft.netcore.app.runtime.linux-x64/10.0.4/microsoft.netcore.app.runtime.linux-x64.10.0.4.nupkg.sha512",
+    "/home/codespace/.nuget/packages/microsoft.aspnetcore.app.runtime.linux-x64/10.0.4/microsoft.aspnetcore.app.runtime.linux-x64.10.0.4.nupkg.sha512"
   ],
   "logs": []
 }

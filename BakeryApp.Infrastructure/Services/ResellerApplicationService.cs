@@ -100,7 +100,7 @@ public class ResellerApplicationService : IResellerApplicationService
                     LastName = application.LastName,
                     Email = application.Email,
                     PhoneNumber = application.PhoneNumber,
-                    PasswordHash = "" // They will set password later via "forgot password" or registration
+                    PasswordHash = application.PasswordHash ?? ""
                 };
                 _context.Persons.Add(person);
                 await _context.SaveChangesAsync();
