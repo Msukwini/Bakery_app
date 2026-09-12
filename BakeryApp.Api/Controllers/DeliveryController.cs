@@ -51,9 +51,6 @@ public class DeliveryController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// List all assignments (for admin dashboard)
-    /// </summary>
     [HttpGet("assignments")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> ListAllAssignments([FromQuery] bool activeOnly = true)
@@ -67,16 +64,25 @@ public class DeliveryController : ControllerBase
             resellerName = a.Reseller?.Person != null
                 ? $"{a.Reseller.Person.FirstName} {a.Reseller.Person.LastName}"
                 : "Unknown",
+            resellerPersonId = a.Reseller?.Person?.Id,
+            resellerHasPicture = a.Reseller?.Person != null && !string.IsNullOrEmpty(a.Reseller.Person.ProfilePicturePath),
+
             permanentDeliveryEmployeeId = a.PermanentDeliveryEmployeeId,
             permanentDeliveryCode = a.PermanentDeliveryEmployee?.Code ?? "Unknown",
             permanentDeliveryName = a.PermanentDeliveryEmployee?.Person != null
                 ? $"{a.PermanentDeliveryEmployee.Person.FirstName} {a.PermanentDeliveryEmployee.Person.LastName}"
                 : "Unknown",
+            permanentPersonId = a.PermanentDeliveryEmployee?.Person?.Id,
+            permanentHasPicture = a.PermanentDeliveryEmployee?.Person != null && !string.IsNullOrEmpty(a.PermanentDeliveryEmployee.Person.ProfilePicturePath),
+
             actualDeliveryEmployeeId = a.ActualDeliveryEmployeeId,
             actualDeliveryCode = a.ActualDeliveryEmployee?.Code,
             actualDeliveryName = a.ActualDeliveryEmployee?.Person != null
                 ? $"{a.ActualDeliveryEmployee.Person.FirstName} {a.ActualDeliveryEmployee.Person.LastName}"
                 : null,
+            actualPersonId = a.ActualDeliveryEmployee?.Person?.Id,
+            actualHasPicture = a.ActualDeliveryEmployee?.Person != null && !string.IsNullOrEmpty(a.ActualDeliveryEmployee.Person.ProfilePicturePath),
+
             type = a.Type.ToString(),
             startDate = a.StartDate,
             endDate = a.EndDate,

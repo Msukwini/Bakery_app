@@ -24,11 +24,6 @@
             Deactivate a rule (soft delete — history preserved).
             </summary>
         </member>
-        <member name="M:BakeryApp.Api.Controllers.DeliveryController.ListAllAssignments(System.Boolean)">
-            <summary>
-            List all assignments (for admin dashboard)
-            </summary>
-        </member>
         <member name="M:BakeryApp.Api.Controllers.ForgotPasswordController.ForgotPassword(BakeryApp.Api.Controllers.ForgotPasswordRequest)">
             <summary>
             Request a password reset. Always returns success (doesn't reveal if account exists).

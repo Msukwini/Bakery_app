@@ -3,18 +3,25 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { Truck, Plus, X, RefreshCw, User, Users } from 'lucide-react';
+import ProfilePic from '@/components/ProfilePic';
 
 interface Assignment {
   id: string;
   resellerEmployeeId: string;
   resellerCode: string;
   resellerName: string;
+  resellerPersonId: string | null;
+  resellerHasPicture: boolean;
   permanentDeliveryEmployeeId: string;
   permanentDeliveryCode: string;
   permanentDeliveryName: string;
+  permanentPersonId: string | null;
+  permanentHasPicture: boolean;
   actualDeliveryEmployeeId: string | null;
   actualDeliveryCode: string | null;
   actualDeliveryName: string | null;
+  actualPersonId: string | null;
+  actualHasPicture: boolean;
   type: string;
   startDate: string;
   endDate: string | null;
@@ -62,7 +69,7 @@ export default function DeliveryAssignmentsPage() {
         api.get('/api/Admin/delivery-employees'),
       ]);
       setAssignments(a.data);
-      setResellers(r.data);  // ← Show ALL resellers
+      setResellers(r.data);
       setDeliveryEmps(d.data);
       if (d.data.length > 0 && !form.deliveryEmployeeId) {
         setForm((f) => ({ ...f, deliveryEmployeeId: d.data[0].id }));
@@ -76,7 +83,6 @@ export default function DeliveryAssignmentsPage() {
 
   useEffect(() => { load(); }, [activeOnly]);
 
-  // Get current permanent assignment for a reseller
   const getCurrentAssignment = (resellerId: string) => {
     return assignments.find(a => a.resellerEmployeeId === resellerId && a.type === 'PERMANENT' && !a.endDate);
   };
@@ -105,7 +111,6 @@ export default function DeliveryAssignmentsPage() {
   const endAssignment = async (id: string) => {
     if (!confirm('End this assignment today? The reseller will be free to reassign.')) return;
     try {
-      // Set EndDate to yesterday so it's immediately inactive
       const yesterday = new Date(Date.now() - 86400000).toISOString();
       await api.put(`/api/Delivery/assignment/${id}`, {
         endDate: yesterday,
@@ -118,13 +123,8 @@ export default function DeliveryAssignmentsPage() {
     }
   };
 
-  // Filter resellers based on type (only for UX validation)
   const getAvailableResellers = () => {
-    if (form.type === 1) {
-      // TEMPORARY — show all resellers
-      return resellers;
-    }
-    // PERMANENT — hide those with an active permanent assignment
+    if (form.type === 1) return resellers;
     return resellers.filter(r => !getCurrentAssignment(r.id));
   };
 
@@ -181,80 +181,127 @@ export default function DeliveryAssignmentsPage() {
           <p className="text-sm text-gray-500 mt-1">Click "Assign" to connect a reseller to a delivery employee.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-gray-600 text-left">
-              <tr>
-                <th className="px-3 sm:px-4 py-3">Reseller</th>
-                <th className="px-3 sm:px-4 py-3">Permanent</th>
-                <th className="px-3 sm:px-4 py-3">Currently Delivering</th>
-                <th className="px-3 sm:px-4 py-3">Type</th>
-                <th className="px-3 sm:px-4 py-3">Since</th>
-                <th className="px-3 sm:px-4 py-3">Ends</th>
-                <th className="px-3 sm:px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {assignments.map((a) => (
-                <tr key={a.id} className="hover:bg-gray-50">
-                  <td className="px-3 sm:px-4 py-3">
-                    <div className="font-medium">{a.resellerName}</div>
-                    <div className="text-xs text-gray-500">{a.resellerCode}</div>
-                  </td>
-                  <td className="px-3 sm:px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <User size={14} className="text-gray-400" />
-                      <div>
-                        <div>{a.permanentDeliveryName}</div>
-                        <div className="text-xs text-gray-500">{a.permanentDeliveryCode}</div>
+        <div className="space-y-3">
+          {assignments.map((a) => (
+            <div key={a.id} className="bg-white rounded-xl border p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                {/* Reseller */}
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  {a.resellerPersonId ? (
+                    <ProfilePic
+                      personId={a.resellerPersonId}
+                      hasPicture={a.resellerHasPicture}
+                      firstName={a.resellerName.split(' ')[0]}
+                      lastName={a.resellerName.split(' ')[1]}
+                      size={48}
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                      <User size={20} className="text-gray-400" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <div className="font-medium text-gray-800 truncate">{a.resellerName}</div>
+                    <div className="text-xs text-gray-500 font-mono">{a.resellerCode}</div>
+                  </div>
+                </div>
+
+                {/* Arrow / Type */}
+                <div className="flex items-center gap-2 sm:flex-col">
+                  <div className={`px-2 py-1 rounded text-[10px] font-semibold ${
+                    a.type === 'PERMANENT' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'
+                  }`}>
+                    {a.type}
+                  </div>
+                  <span className="text-gray-400 text-lg">→</span>
+                </div>
+
+                {/* Permanent driver */}
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  {a.permanentPersonId ? (
+                    <ProfilePic
+                      personId={a.permanentPersonId}
+                      hasPicture={a.permanentHasPicture}
+                      firstName={a.permanentDeliveryName.split(' ')[0]}
+                      lastName={a.permanentDeliveryName.split(' ')[1]}
+                      size={48}
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                      <Truck size={20} className="text-gray-400" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <div className="text-xs text-gray-500 mb-0.5">Permanent</div>
+                    <div className="font-medium text-gray-800 truncate text-sm">{a.permanentDeliveryName}</div>
+                    <div className="text-xs text-gray-500 font-mono">{a.permanentDeliveryCode}</div>
+                  </div>
+                </div>
+
+                {/* Actual driver (if different) */}
+                {a.actualDeliveryEmployeeId && a.actualDeliveryEmployeeId !== a.permanentDeliveryEmployeeId && (
+                  <>
+                    <span className="text-gray-400 text-lg hidden sm:block">→</span>
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      {a.actualPersonId ? (
+                        <ProfilePic
+                          personId={a.actualPersonId}
+                          hasPicture={a.actualHasPicture}
+                          firstName={a.actualDeliveryName?.split(' ')[0]}
+                          lastName={a.actualDeliveryName?.split(' ')[1]}
+                          size={48}
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                          <Truck size={20} className="text-gray-400" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <div className="text-xs text-orange-500 mb-0.5 font-medium">Covering</div>
+                        <div className="font-medium text-gray-800 truncate text-sm">{a.actualDeliveryName}</div>
+                        <div className="text-xs text-gray-500 font-mono">{a.actualDeliveryCode}</div>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-3 sm:px-4 py-3">
-                    {a.actualDeliveryName ? (
-                      <div className="flex items-center gap-2">
-                        <User size={14} className="text-blue-500" />
-                        <div>
-                          <div>{a.actualDeliveryName}</div>
-                          <div className="text-xs text-gray-500">{a.actualDeliveryCode}</div>
-                        </div>
-                      </div>
-                    ) : <span className="text-gray-400">—</span>}
-                  </td>
-                  <td className="px-3 sm:px-4 py-3">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      a.type === 'PERMANENT' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'
-                    }`}>
-                      {a.type}
-                    </span>
-                  </td>
-                  <td className="px-3 sm:px-4 py-3 text-gray-500 text-xs">
-                    {new Date(a.startDate).toLocaleDateString('en-ZA')}
-                  </td>
-                  <td className="px-3 sm:px-4 py-3 text-gray-500 text-xs">
-                    {a.endDate ? new Date(a.endDate).toLocaleDateString('en-ZA') : <span className="text-green-600 font-medium">Active</span>}
-                  </td>
-                  <td className="px-3 sm:px-4 py-3 text-right">
-                    {!a.endDate && (
+                  </>
+                )}
+
+                {/* Actions */}
+                <div className="flex flex-col items-end gap-2 sm:ml-4 flex-shrink-0">
+                  <div className="text-xs text-gray-500">
+                    Since {new Date(a.startDate).toLocaleDateString('en-ZA')}
+                  </div>
+                  {a.endDate ? (
+                    <div className="text-xs text-gray-400">
+                      Ended {new Date(a.endDate).toLocaleDateString('en-ZA')}
+                    </div>
+                  ) : (
+                    <>
+                      <span className="text-xs text-green-600 font-medium">Active</span>
                       <button
                         onClick={() => endAssignment(a.id)}
                         className="text-xs text-red-600 hover:text-red-800"
                       >
                         End
                       </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {a.reason && (
+                <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
+                  {a.reason}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
 
       {/* Assign Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Assign Reseller</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
@@ -297,7 +344,6 @@ export default function DeliveryAssignmentsPage() {
                       <option key={r.id} value={r.id}>
                         {r.code} · {r.name}
                         {current ? ` (currently: ${current.permanentDeliveryName})` : ''}
-                        {r.residenceName ? ` · ${r.residenceName}` : ''}
                       </option>
                     );
                   })}
