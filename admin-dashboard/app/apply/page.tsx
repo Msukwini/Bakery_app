@@ -65,7 +65,7 @@ export default function ApplyPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-8 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-3"><img src="/logo-v2.png" alt="Ndlovu Bakery" className="w-16 h-16 object-contain" /></div>
+          <div className="flex justify-center mb-3"><img src="/logo.png" alt="Ndlovu Bakery" className="w-28 h-28 object-contain" /></div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Ndlovu Bakery</h1>
           <p className="text-lg text-gray-600">Become a Reseller</p>
           <p className="text-sm text-gray-500 mt-2 max-w-lg mx-auto">

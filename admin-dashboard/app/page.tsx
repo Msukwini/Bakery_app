@@ -37,8 +37,8 @@ export default function HomePage() {
       <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur border-b border-gray-100 z-40">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="/logo-v2.png" alt="Ndlovu Bakery" className="w-10 h-10 object-contain" />
-            <span className="font-bold text-xl text-gray-800">Ndlovu Bakery</span>
+            <img src="/logo.png" alt="Ndlovu Bakery" className="w-16 h-16 object-contain" />
+            <span className="font-bold text-2xl text-gray-800">Ndlovu Bakery</span>
           </div>
           <div className="flex items-center gap-2">
             <Link
@@ -137,7 +137,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <img src="/logo-v2.png" alt="Ndlovu Bakery" className="w-10 h-10 object-contain" />
+                <img src="/logo.png" alt="Ndlovu Bakery" className="w-16 h-16 object-contain" />
               </div>
               <h3 className="font-bold text-lg mb-2">Freshly Baked</h3>
               <p className="text-sm text-gray-600">Made daily with quality ingredients</p>
@@ -185,7 +185,7 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <img src="/logo-v2.png" alt="Ndlovu Bakery" className="w-8 h-8 object-contain" />
+              <img src="/logo.png" alt="Ndlovu Bakery" className="w-12 h-12 object-contain" />
               <span className="font-bold text-white">Ndlovu Bakery</span>
             </div>
             <p className="text-sm text-gray-400">Freshly baked goods, delivered daily.</p>
