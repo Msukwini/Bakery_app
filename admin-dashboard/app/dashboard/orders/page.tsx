@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 
 interface Order {
@@ -29,6 +30,7 @@ const statusColors = [
 ];
 
 export default function OrdersPage() {
+  const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
@@ -83,6 +85,7 @@ export default function OrdersPage() {
                 <th className="px-3 sm:px-4 py-2 sm:py-3">Paid</th>
                 <th className="px-3 sm:px-4 py-2 sm:py-3">Date</th>
                 <th className="px-3 sm:px-4 py-2 sm:py-3">Change</th>
+                  <th className="px-3 sm:px-4 py-3 text-right">View</th>
               </tr>
             </thead>
             <tbody className="divide-y">
