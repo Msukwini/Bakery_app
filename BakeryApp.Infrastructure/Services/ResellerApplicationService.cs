@@ -131,7 +131,7 @@ public class ResellerApplicationService : IResellerApplicationService
             person.HasSetPassword = false;
             await _context.SaveChangesAsync();
 
-            var frontendUrl = "https://bakery-app-git-main-astronoteys-projects.vercel.app";
+            var frontendUrl = "https://ndlovufreshgoods.duckdns.org";
             var setupLink = $"{frontendUrl}/setup-password?token={setupToken}";
             await _notificationService.NotifyResellerSetupLinkAsync(person.Email, person.FirstName, setupLink);
             application.ResidenceId = residenceId.Value;
