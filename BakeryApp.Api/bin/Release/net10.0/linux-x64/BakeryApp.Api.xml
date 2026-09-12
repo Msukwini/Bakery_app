@@ -4,6 +4,26 @@
         <name>BakeryApp.Api</name>
     </assembly>
     <members>
+        <member name="M:BakeryApp.Api.Controllers.CommissionRulesController.List">
+            <summary>
+            List all commission rules grouped by product variant, with active + history.
+            </summary>
+        </member>
+        <member name="M:BakeryApp.Api.Controllers.CommissionRulesController.Create(BakeryApp.Api.Controllers.CreateCommissionRuleDto)">
+            <summary>
+            Create a new commission rule. If there's an active rule, it gets ended the day before this one starts.
+            </summary>
+        </member>
+        <member name="M:BakeryApp.Api.Controllers.CommissionRulesController.Update(System.Guid,BakeryApp.Api.Controllers.UpdateCommissionRuleDto)">
+            <summary>
+            Manually update a rule's rate. Only allowed for the active rule.
+            </summary>
+        </member>
+        <member name="M:BakeryApp.Api.Controllers.CommissionRulesController.Deactivate(System.Guid)">
+            <summary>
+            Deactivate a rule (soft delete — history preserved).
+            </summary>
+        </member>
         <member name="M:BakeryApp.Api.Controllers.DeliveryController.ListAllAssignments(System.Boolean)">
             <summary>
             List all assignments (for admin dashboard)
