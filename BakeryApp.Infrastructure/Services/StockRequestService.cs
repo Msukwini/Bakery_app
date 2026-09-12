@@ -10,9 +10,12 @@ public interface IStockRequestService
     Task<ResellerStockRequest> CreateRequestAsync(Guid resellerEmployeeId, Guid productVariantId, int requestedQuantity, string? resellerNotes);
     Task<ResellerStockRequest?> GetRequestAsync(Guid requestId);
     Task<List<ResellerStockRequest>> GetRequestsAsync(Guid? resellerEmployeeId, StockRequestStatus? status);
-    Task<ResellerStockRequest> ApproveRequestAsync(Guid requestId, int allocatedQuantity, string? adminNotes, string adminEmployeeCode);
+    Task<List<ResellerStockRequest>> GetDeliveriesForDriverAsync(Guid deliveryEmployeeId);
+    Task<ResellerStockRequest> ApproveRequestAsync(Guid requestId, int allocatedQuantity, Guid? assignedDeliveryEmployeeId, DateTime? expectedDeliveryDate, string? adminNotes, string adminEmployeeCode);
     Task<ResellerStockRequest> RejectRequestAsync(Guid requestId, string rejectionReason, string adminEmployeeCode);
-    Task<ResellerStockRequest> ConfirmReceiptAsync(Guid requestId, Guid resellerEmployeeId);
+    Task<ResellerStockRequest> MarkDeliveredAsync(Guid requestId, Guid deliveryEmployeeId, int deliveredQuantity, string? deliveryNotes);
+    Task<ResellerStockRequest> ConfirmReceiptAsync(Guid requestId, Guid resellerEmployeeId, int receivedQuantity, string? receiptNotes);
+    Task<ResellerStockRequest> ResolveVarianceAsync(Guid requestId, string resolutionNotes, bool writeOff, string adminEmployeeCode);
     Task<ResellerStockAccountabilityDtoResult> GetResellerAccountabilityAsync(Guid resellerEmployeeId);
 }
 
@@ -61,9 +64,22 @@ public class StockRequestService : IStockRequestService
             .FirstOrDefaultAsync(e => e.Id == resellerEmployeeId && e.RoleType == EmployeeRoleType.Reseller && e.IsActive);
         if (reseller == null) throw new Exception("Reseller not found or inactive.");
 
-        var variant = await _context.ProductVariants
-            .FirstOrDefaultAsync(v => v.Id == productVariantId);
+        var variant = await _context.ProductVariants.FirstOrDefaultAsync(v => v.Id == productVariantId);
         if (variant == null) throw new Exception("Product variant not found.");
+
+        // Cutoff: requests after 11 AM go to tomorrow's delivery
+        var now = DateTime.UtcNow;
+        DateTime expectedDate;
+        if (now.Hour >= 11)
+        {
+            // Tomorrow midnight
+            expectedDate = now.Date.AddDays(2);
+        }
+        else
+        {
+            // Today midnight
+            expectedDate = now.Date.AddDays(1);
+        }
 
         var request = new ResellerStockRequest
         {
@@ -74,7 +90,8 @@ public class StockRequestService : IStockRequestService
             RequestedQuantity = requestedQuantity,
             ResellerNotes = resellerNotes,
             Status = StockRequestStatus.PENDING,
-            RequestedAt = DateTime.UtcNow
+            RequestedAt = DateTime.UtcNow,
+            ExpectedDeliveryDate = expectedDate
         };
 
         _context.ResellerStockRequests.Add(request);
@@ -89,6 +106,8 @@ public class StockRequestService : IStockRequestService
             .Include(r => r.Reseller)
             .Include(r => r.ProductVariant).ThenInclude(v => v.Product)
             .Include(r => r.ReviewedByAdmin)
+            .Include(r => r.AssignedDeliveryEmployee).ThenInclude(e => e!.Person)
+            .Include(r => r.ActualDeliveryEmployee).ThenInclude(e => e!.Person)
             .FirstOrDefaultAsync(r => r.Id == requestId);
     }
 
@@ -97,6 +116,8 @@ public class StockRequestService : IStockRequestService
         var query = _context.ResellerStockRequests
             .Include(r => r.Reseller)
             .Include(r => r.ProductVariant).ThenInclude(v => v.Product)
+            .Include(r => r.AssignedDeliveryEmployee).ThenInclude(e => e!.Person)
+            .Include(r => r.ActualDeliveryEmployee).ThenInclude(e => e!.Person)
             .AsQueryable();
 
         if (resellerEmployeeId.HasValue) query = query.Where(r => r.ResellerEmployeeId == resellerEmployeeId.Value);
@@ -105,7 +126,21 @@ public class StockRequestService : IStockRequestService
         return await query.OrderByDescending(r => r.RequestedAt).ToListAsync();
     }
 
-    public async Task<ResellerStockRequest> ApproveRequestAsync(Guid requestId, int allocatedQuantity, string? adminNotes, string adminEmployeeCode)
+    public async Task<List<ResellerStockRequest>> GetDeliveriesForDriverAsync(Guid deliveryEmployeeId)
+    {
+        return await _context.ResellerStockRequests
+            .Include(r => r.Reseller).ThenInclude(e => e.Person)
+            .Include(r => r.Reseller).ThenInclude(e => e.Residence)
+            .Include(r => r.ProductVariant).ThenInclude(v => v.Product)
+            .Where(r =>
+                (r.AssignedDeliveryEmployeeId == deliveryEmployeeId ||
+                 r.ActualDeliveryEmployeeId == deliveryEmployeeId) &&
+                (r.Status == StockRequestStatus.ALLOCATED || r.Status == StockRequestStatus.DELIVERED))
+            .OrderBy(r => r.ExpectedDeliveryDate)
+            .ToListAsync();
+    }
+
+    public async Task<ResellerStockRequest> ApproveRequestAsync(Guid requestId, int allocatedQuantity, Guid? assignedDeliveryEmployeeId, DateTime? expectedDeliveryDate, string? adminNotes, string adminEmployeeCode)
     {
         if (allocatedQuantity <= 0) throw new Exception("Allocated quantity must be positive.");
 
@@ -118,12 +153,10 @@ public class StockRequestService : IStockRequestService
             .FirstOrDefaultAsync(e => e.Code == adminEmployeeCode && e.RoleType == EmployeeRoleType.Admin);
         if (admin == null) throw new Exception("Admin not found.");
 
-        // Check available stock
         var currentStock = await _inventoryService.GetCurrentStockAsync(request.ProductVariantId);
         if (currentStock < allocatedQuantity)
             throw new Exception($"Insufficient stock. Available: {currentStock}, Requested: {allocatedQuantity}");
 
-        // Deduct from main inventory and record allocation
         var ledgerEntry = await _inventoryService.DeductStockAsync(
             request.ProductVariantId,
             allocatedQuantity,
@@ -132,6 +165,19 @@ public class StockRequestService : IStockRequestService
             request.ResellerEmployeeId
         );
 
+        // Auto-assign delivery employee if not provided
+        Guid? deliveryEmpId = assignedDeliveryEmployeeId;
+        if (deliveryEmpId == null)
+        {
+            var permanent = await _context.DeliveryAssignments
+                .Where(a => a.ResellerEmployeeId == request.ResellerEmployeeId
+                         && a.Type == AssignmentType.PERMANENT
+                         && a.EndDate == null)
+                .OrderByDescending(a => a.StartDate)
+                .FirstOrDefaultAsync();
+            deliveryEmpId = permanent?.PermanentDeliveryEmployeeId;
+        }
+
         request.AllocatedQuantity = allocatedQuantity;
         request.Status = StockRequestStatus.ALLOCATED;
         request.ReviewedAt = DateTime.UtcNow;
@@ -139,6 +185,8 @@ public class StockRequestService : IStockRequestService
         request.ReviewedByAdminId = admin.Id;
         request.AdminNotes = adminNotes;
         request.InventoryLedgerEntryId = ledgerEntry.Id;
+        if (deliveryEmpId.HasValue) request.AssignedDeliveryEmployeeId = deliveryEmpId;
+        if (expectedDeliveryDate.HasValue) request.ExpectedDeliveryDate = expectedDeliveryDate;
 
         await _context.SaveChangesAsync();
         await _notificationService.NotifyStockRequestApprovedAsync(request);
@@ -166,17 +214,78 @@ public class StockRequestService : IStockRequestService
         return request;
     }
 
-    public async Task<ResellerStockRequest> ConfirmReceiptAsync(Guid requestId, Guid resellerEmployeeId)
+    public async Task<ResellerStockRequest> MarkDeliveredAsync(Guid requestId, Guid deliveryEmployeeId, int deliveredQuantity, string? deliveryNotes)
     {
+        if (deliveredQuantity <= 0) throw new Exception("Delivered quantity must be positive.");
+
+        var request = await GetRequestAsync(requestId);
+        if (request == null) throw new Exception("Request not found.");
+        if (request.Status != StockRequestStatus.ALLOCATED)
+            throw new Exception($"Cannot mark delivered. Status is {request.Status}.");
+
+        var driver = await _context.EmployeeIds
+            .FirstOrDefaultAsync(e => e.Id == deliveryEmployeeId && e.RoleType == EmployeeRoleType.Delivery);
+        if (driver == null) throw new Exception("Delivery employee not found.");
+
+        request.Status = StockRequestStatus.DELIVERED;
+        request.DeliveryCompletedAt = DateTime.UtcNow;
+        request.DeliveredQuantity = deliveredQuantity;
+        request.DeliveryNotes = deliveryNotes;
+        request.ActualDeliveryEmployeeId = deliveryEmployeeId;
+
+        await _context.SaveChangesAsync();
+        return request;
+    }
+
+    public async Task<ResellerStockRequest> ConfirmReceiptAsync(Guid requestId, Guid resellerEmployeeId, int receivedQuantity, string? receiptNotes)
+    {
+        if (receivedQuantity < 0) throw new Exception("Received quantity cannot be negative.");
+
         var request = await GetRequestAsync(requestId);
         if (request == null) throw new Exception("Request not found.");
         if (request.ResellerEmployeeId != resellerEmployeeId)
             throw new Exception("This request does not belong to you.");
-        if (request.Status != StockRequestStatus.ALLOCATED)
+        if (request.Status != StockRequestStatus.DELIVERED)
             throw new Exception($"Cannot confirm receipt. Status is {request.Status}.");
 
-        request.Status = StockRequestStatus.RECEIVED;
+        request.ReceivedQuantity = receivedQuantity;
+        request.ReceiptNotes = receiptNotes;
         request.ReceivedAt = DateTime.UtcNow;
+
+        // Check variance
+        if (request.DeliveredQuantity.HasValue && request.DeliveredQuantity.Value != receivedQuantity)
+        {
+            request.Variance = (request.DeliveredQuantity.Value - receivedQuantity);
+            request.VarianceStatus = VarianceStatus.PENDING;
+            request.Status = StockRequestStatus.VARIANCE_PENDING;
+        }
+        else
+        {
+            request.Variance = 0;
+            request.VarianceStatus = VarianceStatus.NONE;
+            request.Status = StockRequestStatus.RECEIVED;
+        }
+
+        await _context.SaveChangesAsync();
+        return request;
+    }
+
+    public async Task<ResellerStockRequest> ResolveVarianceAsync(Guid requestId, string resolutionNotes, bool writeOff, string adminEmployeeCode)
+    {
+        var request = await GetRequestAsync(requestId);
+        if (request == null) throw new Exception("Request not found.");
+        if (request.Status != StockRequestStatus.VARIANCE_PENDING && request.Status != StockRequestStatus.DISPUTED)
+            throw new Exception($"Request is not in variance state. Status: {request.Status}.");
+
+        var admin = await _context.EmployeeIds
+            .FirstOrDefaultAsync(e => e.Code == adminEmployeeCode && e.RoleType == EmployeeRoleType.Admin);
+        if (admin == null) throw new Exception("Admin not found.");
+
+        request.VarianceStatus = writeOff ? VarianceStatus.WRITTEN_OFF : VarianceStatus.RESOLVED;
+        request.VarianceNotes = resolutionNotes;
+        request.VarianceResolvedByAdminId = admin.Id;
+        request.VarianceResolvedAt = DateTime.UtcNow;
+        request.Status = StockRequestStatus.RECEIVED;
 
         await _context.SaveChangesAsync();
         return request;

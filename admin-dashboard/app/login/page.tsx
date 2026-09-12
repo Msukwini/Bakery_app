@@ -28,7 +28,7 @@ export default function LoginPage() {
       } else if (role === 'Reseller') {
         router.push('/dashboard/my-sales');
       } else if (role === 'Delivery') {
-        router.push('/dashboard/my-assignments');
+        router.push("/dashboard/my-deliveries");
       } else {
         router.push('/dashboard');
       }

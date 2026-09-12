@@ -31,8 +31,8 @@ const resellerNav = [
 ];
 
 const deliveryNav = [
+  { href: '/dashboard/my-deliveries', label: 'My Deliveries', icon: Truck },
   { href: '/dashboard/my-assignments', label: 'My Assignments', icon: ClipboardList },
-  { href: '/dashboard/my-collections', label: 'My Collections', icon: DollarSign },
   { href: '/dashboard/my-earnings', label: 'My Earnings', icon: TrendingUp },
 ];
 
@@ -43,7 +43,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    // Route guard: prevent role-specific pages from being accessed by other roles
     if (!user) return;
 
     const isAdminRoute = pathname === '/dashboard' ||
@@ -56,16 +55,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       pathname.startsWith('/dashboard/my-stock-requests') ||
       pathname.startsWith('/dashboard/my-commission');
 
-    const isDeliveryRoute = pathname.startsWith('/dashboard/my-assignments') ||
-      pathname.startsWith('/dashboard/my-collections') ||
+    const isDeliveryRoute = pathname.startsWith('/dashboard/my-deliveries') ||
+      pathname.startsWith('/dashboard/my-assignments') ||
       pathname.startsWith('/dashboard/my-earnings');
 
     if (isAdminRoute && user.role !== 'Admin') {
-      // Wrong role trying to access admin — redirect to their home
       if (user.role === 'Reseller') router.push('/dashboard/my-sales');
-      else if (user.role === 'Delivery') router.push('/dashboard/my-assignments');
+      else if (user.role === 'Delivery') router.push('/dashboard/my-deliveries');
     } else if (isResellerRoute && user.role !== 'Reseller') {
-      router.push(user.role === 'Admin' ? '/dashboard' : '/dashboard/my-assignments');
+      router.push(user.role === 'Admin' ? '/dashboard' : '/dashboard/my-deliveries');
     } else if (isDeliveryRoute && user.role !== 'Delivery') {
       router.push(user.role === 'Admin' ? '/dashboard' : '/dashboard/my-sales');
     }
@@ -74,19 +72,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (loading) return <div className="p-8">Loading...</div>;
   if (!user) return null;
 
-  // Choose nav items based on role
   const navItems = user.role === 'Admin' ? adminNav :
                    user.role === 'Reseller' ? resellerNav :
                    user.role === 'Delivery' ? deliveryNav : [];
 
-  // Role label color
   const roleColor = user.role === 'Admin' ? 'bg-purple-100 text-purple-800' :
                     user.role === 'Reseller' ? 'bg-blue-100 text-blue-800' :
                     'bg-green-100 text-green-800';
 
   return (
     <div className="min-h-screen flex bg-gray-50">
-      {/* Mobile top bar */}
       <div className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-30 flex items-center justify-between px-4 py-3">
         <button onClick={() => setSidebarOpen(true)} className="text-gray-700">
           <Menu size={24} />
@@ -95,20 +90,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="w-6" />
       </div>
 
-      {/* Mobile overlay */}
       {sidebarOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black/40 z-40"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className="lg:hidden fixed inset-0 bg-black/40 z-40" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
-      <aside
-        className={`fixed lg:static inset-y-0 left-0 w-64 bg-white border-r border-gray-200 flex flex-col z-50 transform transition-transform ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        }`}
-      >
+      <aside className={`fixed lg:static inset-y-0 left-0 w-64 bg-white border-r border-gray-200 flex flex-col z-50 transform transition-transform ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}>
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
           <div className="min-w-0">
             <h1 className="text-lg font-bold text-gray-800">Ndlovu Bakery</h1>
@@ -134,9 +122,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition ${
-                  active
-                    ? 'bg-blue-50 text-blue-700 font-medium'
-                    : 'text-gray-700 hover:bg-gray-100'
+                  active ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 <Icon size={18} />
@@ -147,17 +133,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
 
         <div className="p-4 border-t border-gray-200">
-          <button
-            onClick={logout}
-            className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100"
-          >
+          <button onClick={logout} className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100">
             <LogOut size={18} />
             Sign out
           </button>
         </div>
       </aside>
 
-      {/* Main content */}
       <main className="flex-1 overflow-auto lg:ml-0 pt-14 lg:pt-0">
         <div className="p-4 sm:p-6 lg:p-8">{children}</div>
       </main>

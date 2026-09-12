@@ -22,11 +22,11 @@ public class StockRequestsController : ControllerBase
         _context = context;
     }
 
-    private async Task<Guid?> GetCurrentResellerIdAsync()
+    private async Task<Guid?> GetCurrentEmployeeIdAsync(EmployeeRoleType role)
     {
         var code = User.FindFirst("EmployeeCode")?.Value;
         if (string.IsNullOrEmpty(code)) return null;
-        var emp = await _context.EmployeeIds.FirstOrDefaultAsync(e => e.Code == code && e.RoleType == EmployeeRoleType.Reseller);
+        var emp = await _context.EmployeeIds.FirstOrDefaultAsync(e => e.Code == code && e.RoleType == role);
         return emp?.Id;
     }
 
@@ -34,12 +34,11 @@ public class StockRequestsController : ControllerBase
     [Authorize(Roles = "Reseller")]
     public async Task<IActionResult> Create([FromBody] CreateStockRequestDto dto)
     {
-        var resellerId = await GetCurrentResellerIdAsync();
-        if (resellerId == null) return BadRequest("Reseller account not found.");
-
+        var id = await GetCurrentEmployeeIdAsync(EmployeeRoleType.Reseller);
+        if (id == null) return BadRequest("Reseller account not found.");
         try
         {
-            var req = await _service.CreateRequestAsync(resellerId.Value, dto.ProductVariantId, dto.RequestedQuantity, dto.ResellerNotes);
+            var req = await _service.CreateRequestAsync(id.Value, dto.ProductVariantId, dto.RequestedQuantity, dto.ResellerNotes);
             return Ok(new { id = req.Id, status = req.Status.ToString() });
         }
         catch (Exception ex) { return BadRequest(new { error = ex.Message }); }
@@ -50,17 +49,26 @@ public class StockRequestsController : ControllerBase
     {
         List<Core.Entities.ResellerStockRequest> requests;
         if (User.IsInRole("Admin"))
-        {
             requests = await _service.GetRequestsAsync(null, status);
-        }
-        else
+        else if (User.IsInRole("Reseller"))
         {
-            var resellerId = await GetCurrentResellerIdAsync();
-            if (resellerId == null) return Forbid();
-            requests = await _service.GetRequestsAsync(resellerId.Value, status);
+            var id = await GetCurrentEmployeeIdAsync(EmployeeRoleType.Reseller);
+            if (id == null) return Forbid();
+            requests = await _service.GetRequestsAsync(id.Value, status);
         }
+        else return Forbid();
 
         return Ok(requests.Select(MapToDto));
+    }
+
+    [HttpGet("my-deliveries")]
+    [Authorize(Roles = "Delivery")]
+    public async Task<IActionResult> MyDeliveries()
+    {
+        var id = await GetCurrentEmployeeIdAsync(EmployeeRoleType.Delivery);
+        if (id == null) return BadRequest("Delivery employee not found.");
+        var list = await _service.GetDeliveriesForDriverAsync(id.Value);
+        return Ok(list.Select(MapToDto));
     }
 
     [HttpGet("{id}")]
@@ -69,12 +77,17 @@ public class StockRequestsController : ControllerBase
         var req = await _service.GetRequestAsync(id);
         if (req == null) return NotFound();
 
-        if (!User.IsInRole("Admin"))
+        if (User.IsInRole("Reseller"))
         {
-            var resellerId = await GetCurrentResellerIdAsync();
-            if (resellerId == null || req.ResellerEmployeeId != resellerId.Value)
-                return Forbid();
+            var resellerId = await GetCurrentEmployeeIdAsync(EmployeeRoleType.Reseller);
+            if (resellerId != req.ResellerEmployeeId) return Forbid();
         }
+        else if (User.IsInRole("Delivery"))
+        {
+            var driverId = await GetCurrentEmployeeIdAsync(EmployeeRoleType.Delivery);
+            if (driverId != req.AssignedDeliveryEmployeeId && driverId != req.ActualDeliveryEmployeeId) return Forbid();
+        }
+
         return Ok(MapToDto(req));
     }
 
@@ -83,14 +96,14 @@ public class StockRequestsController : ControllerBase
     public async Task<IActionResult> Approve(Guid id, [FromBody] ReviewStockRequestDto dto)
     {
         if (!dto.AllocatedQuantity.HasValue || dto.AllocatedQuantity.Value <= 0)
-            return BadRequest("AllocatedQuantity is required for approval.");
+            return BadRequest("AllocatedQuantity is required.");
 
         var adminCode = User.FindFirst("EmployeeCode")?.Value;
         if (string.IsNullOrEmpty(adminCode)) return Unauthorized();
 
         try
         {
-            var req = await _service.ApproveRequestAsync(id, dto.AllocatedQuantity.Value, dto.AdminNotes, adminCode);
+            var req = await _service.ApproveRequestAsync(id, dto.AllocatedQuantity.Value, dto.AssignedDeliveryEmployeeId, dto.ExpectedDeliveryDate, dto.AdminNotes, adminCode);
             return Ok(MapToDto(req));
         }
         catch (Exception ex) { return BadRequest(new { error = ex.Message }); }
@@ -114,16 +127,43 @@ public class StockRequestsController : ControllerBase
         catch (Exception ex) { return BadRequest(new { error = ex.Message }); }
     }
 
-    [HttpPut("{id}/receive")]
-    [Authorize(Roles = "Reseller")]
-    public async Task<IActionResult> ConfirmReceipt(Guid id)
+    [HttpPut("{id}/deliver")]
+    [Authorize(Roles = "Delivery")]
+    public async Task<IActionResult> MarkDelivered(Guid id, [FromBody] MarkDeliveredDto dto)
     {
-        var resellerId = await GetCurrentResellerIdAsync();
-        if (resellerId == null) return BadRequest("Reseller account not found.");
-
+        var driverId = await GetCurrentEmployeeIdAsync(EmployeeRoleType.Delivery);
+        if (driverId == null) return BadRequest("Delivery employee not found.");
         try
         {
-            var req = await _service.ConfirmReceiptAsync(id, resellerId.Value);
+            var req = await _service.MarkDeliveredAsync(id, driverId.Value, dto.DeliveredQuantity, dto.DeliveryNotes);
+            return Ok(MapToDto(req));
+        }
+        catch (Exception ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    [HttpPut("{id}/receive")]
+    [Authorize(Roles = "Reseller")]
+    public async Task<IActionResult> ConfirmReceipt(Guid id, [FromBody] ConfirmReceiptDto dto)
+    {
+        var resellerId = await GetCurrentEmployeeIdAsync(EmployeeRoleType.Reseller);
+        if (resellerId == null) return BadRequest("Reseller not found.");
+        try
+        {
+            var req = await _service.ConfirmReceiptAsync(id, resellerId.Value, dto.ReceivedQuantity, dto.ReceiptNotes);
+            return Ok(MapToDto(req));
+        }
+        catch (Exception ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    [HttpPut("{id}/resolve-variance")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ResolveVariance(Guid id, [FromBody] ResolveVarianceDto dto)
+    {
+        var adminCode = User.FindFirst("EmployeeCode")?.Value;
+        if (string.IsNullOrEmpty(adminCode)) return Unauthorized();
+        try
+        {
+            var req = await _service.ResolveVarianceAsync(id, dto.ResolutionNotes, dto.WriteOff, adminCode);
             return Ok(MapToDto(req));
         }
         catch (Exception ex) { return BadRequest(new { error = ex.Message }); }
@@ -135,10 +175,9 @@ public class StockRequestsController : ControllerBase
     {
         if (!User.IsInRole("Admin"))
         {
-            var resellerId = await GetCurrentResellerIdAsync();
-            if (resellerId != resellerEmployeeId) return Forbid();
+            var id = await GetCurrentEmployeeIdAsync(EmployeeRoleType.Reseller);
+            if (id != resellerEmployeeId) return Forbid();
         }
-
         try
         {
             var result = await _service.GetResellerAccountabilityAsync(resellerEmployeeId);
@@ -155,13 +194,30 @@ public class StockRequestsController : ControllerBase
         VariantName = r.ProductVariant?.SizeName ?? "Unknown",
         RequestedQuantity = r.RequestedQuantity,
         AllocatedQuantity = r.AllocatedQuantity,
+        DeliveredQuantity = r.DeliveredQuantity,
+        ReceivedQuantity = r.ReceivedQuantity,
         Status = r.Status,
         RequestedAt = r.RequestedAt,
         ReviewedAt = r.ReviewedAt,
         AllocatedAt = r.AllocatedAt,
+        ExpectedDeliveryDate = r.ExpectedDeliveryDate,
+        DeliveryCompletedAt = r.DeliveryCompletedAt,
         ReceivedAt = r.ReceivedAt,
+        AssignedDeliveryCode = r.AssignedDeliveryEmployee?.Code,
+        AssignedDeliveryName = r.AssignedDeliveryEmployee?.Person != null
+            ? $"{r.AssignedDeliveryEmployee.Person.FirstName} {r.AssignedDeliveryEmployee.Person.LastName}"
+            : null,
+        ActualDeliveryCode = r.ActualDeliveryEmployee?.Code,
+        ActualDeliveryName = r.ActualDeliveryEmployee?.Person != null
+            ? $"{r.ActualDeliveryEmployee.Person.FirstName} {r.ActualDeliveryEmployee.Person.LastName}"
+            : null,
         AdminNotes = r.AdminNotes,
         RejectionReason = r.RejectionReason,
-        ResellerNotes = r.ResellerNotes
+        ResellerNotes = r.ResellerNotes,
+        DeliveryNotes = r.DeliveryNotes,
+        ReceiptNotes = r.ReceiptNotes,
+        Variance = r.Variance,
+        VarianceStatus = r.VarianceStatus,
+        VarianceNotes = r.VarianceNotes
     };
 }
