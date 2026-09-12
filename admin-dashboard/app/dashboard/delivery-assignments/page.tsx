@@ -62,9 +62,11 @@ export default function DeliveryAssignmentsPage() {
         api.get('/api/Admin/delivery-employees'),
       ]);
       setAssignments(a.data);
-      setResellers(r.data.filter((x: Reseller) => !a.data.some((assign: Assignment) => assign.resellerEmployeeId === x.id && assign.type === 'PERMANENT')));
+      setResellers(r.data);  // ← Show ALL resellers
       setDeliveryEmps(d.data);
-      if (d.data.length > 0) setForm((f) => ({ ...f, deliveryEmployeeId: d.data[0].id }));
+      if (d.data.length > 0 && !form.deliveryEmployeeId) {
+        setForm((f) => ({ ...f, deliveryEmployeeId: d.data[0].id }));
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to load');
     } finally {
@@ -73,6 +75,11 @@ export default function DeliveryAssignmentsPage() {
   };
 
   useEffect(() => { load(); }, [activeOnly]);
+
+  // Get current permanent assignment for a reseller
+  const getCurrentAssignment = (resellerId: string) => {
+    return assignments.find(a => a.resellerEmployeeId === resellerId && a.type === 'PERMANENT' && !a.endDate);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,10 +103,12 @@ export default function DeliveryAssignmentsPage() {
   };
 
   const endAssignment = async (id: string) => {
-    if (!confirm('End this assignment today?')) return;
+    if (!confirm('End this assignment today? The reseller will be free to reassign.')) return;
     try {
+      // Set EndDate to yesterday so it's immediately inactive
+      const yesterday = new Date(Date.now() - 86400000).toISOString();
       await api.put(`/api/Delivery/assignment/${id}`, {
-        endDate: new Date().toISOString(),
+        endDate: yesterday,
         reason: 'Ended by admin',
       });
       setMessage('Assignment ended.');
@@ -107,6 +116,16 @@ export default function DeliveryAssignmentsPage() {
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed');
     }
+  };
+
+  // Filter resellers based on type (only for UX validation)
+  const getAvailableResellers = () => {
+    if (form.type === 1) {
+      // TEMPORARY — show all resellers
+      return resellers;
+    }
+    // PERMANENT — hide those with an active permanent assignment
+    return resellers.filter(r => !getCurrentAssignment(r.id));
   };
 
   return (
@@ -254,6 +273,11 @@ export default function DeliveryAssignmentsPage() {
                   <option value={0}>PERMANENT — Assign ownership</option>
                   <option value={1}>TEMPORARY — Cover for another driver</option>
                 </select>
+                {form.type === 1 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Shows all resellers. Permanently-assigned resellers can receive temporary cover.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -267,12 +291,22 @@ export default function DeliveryAssignmentsPage() {
                   className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                 >
                   <option value="">— Select reseller —</option>
-                  {resellers.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.code} · {r.name} {r.residenceName ? `(${r.residenceName})` : ''}
-                    </option>
-                  ))}
+                  {getAvailableResellers().map((r) => {
+                    const current = getCurrentAssignment(r.id);
+                    return (
+                      <option key={r.id} value={r.id}>
+                        {r.code} · {r.name}
+                        {current ? ` (currently: ${current.permanentDeliveryName})` : ''}
+                        {r.residenceName ? ` · ${r.residenceName}` : ''}
+                      </option>
+                    );
+                  })}
                 </select>
+                {form.type === 0 && getAvailableResellers().length === 0 && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    All resellers are permanently assigned. Use TEMPORARY to cover a specific one.
+                  </p>
+                )}
               </div>
 
               <div>
