@@ -64,7 +64,9 @@ public class AuthController : ControllerBase
                 Token = token,
                 Email = request.Email,
                 Role = role.ToString(),
-                EmployeeId = employee.Code
+                EmployeeId = employee.Code,
+            EmployeeGuid = employee.Id,
+                EmployeeGuid = employee.Id
             });
         }
         catch (Exception ex)
@@ -90,7 +92,8 @@ public class AuthController : ControllerBase
             Token = token,
             Email = person?.Email ?? "",
             Role = employee.RoleType.ToString(),
-            EmployeeId = employee.Code
+            EmployeeId = employee.Code,
+            EmployeeGuid = employee.Id
         });
     }
 

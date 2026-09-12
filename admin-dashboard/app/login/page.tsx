@@ -7,8 +7,8 @@ import { saveAuth } from '@/lib/auth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('admin2@example.com');
-  const [password, setPassword] = useState('Test@123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -19,23 +19,31 @@ export default function LoginPage() {
 
     try {
       const res = await api.post('/api/Auth/login', { email, password });
-      const { token, role, employeeId } = res.data;
-      saveAuth(token, { email, role, employeeId });
-      router.push('/dashboard');
+      const { token, role, employeeId, employeeGuid } = res.data;
+
+      saveAuth(token, { email, role, employeeId, employeeGuid });
+
+      if (role === 'Admin') {
+        router.push('/dashboard');
+      } else if (role === 'Reseller') {
+        router.push('/dashboard/my-sales');
+      } else if (role === 'Delivery') {
+        router.push('/dashboard/my-assignments');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed. Check credentials.');
+      setError(err.response?.data?.message || 'Invalid email or password.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md p-8 bg-white rounded-2xl shadow-lg">
-        <h1 className="text-2xl font-bold text-center text-gray-800 mb-2">
-          Ndlovu Bakery
-        </h1>
-        <p className="text-center text-sm text-gray-500 mb-6">Admin Dashboard</p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="w-full max-w-md p-6 sm:p-8 bg-white rounded-2xl shadow-lg">
+        <h1 className="text-2xl font-bold text-center text-gray-800 mb-2">Ndlovu Bakery</h1>
+        <p className="text-center text-sm text-gray-500 mb-6">Sign in to your account</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -45,6 +53,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="your@email.com"
               required
             />
           </div>
@@ -56,6 +65,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Your password"
               required
             />
           </div>
@@ -72,10 +82,6 @@ export default function LoginPage() {
             {loading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
-
-        <p className="mt-6 text-xs text-center text-gray-400">
-          Default: admin2@example.com / Test@123
-        </p>
       </div>
     </div>
   );

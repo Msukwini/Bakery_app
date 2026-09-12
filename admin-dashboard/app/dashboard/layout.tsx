@@ -1,15 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import {
   LayoutDashboard, Users, Package, ShoppingCart,
-  Truck, DollarSign, FileText, LogOut, Home, Mail, UserCog, Building2, Menu, X
+  Truck, DollarSign, FileText, LogOut, Home, Mail, UserCog, Building2, Menu, X,
+  TrendingUp, ClipboardList
 } from 'lucide-react';
 
-const navItems = [
+const adminNav = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/users', label: 'Users & Roles', icon: UserCog },
   { href: '/dashboard/residences', label: 'Residences', icon: Building2 },
@@ -23,13 +24,65 @@ const navItems = [
   { href: '/dashboard/notifications', label: 'Notifications', icon: Mail },
 ];
 
+const resellerNav = [
+  { href: '/dashboard/my-sales', label: 'My Sales', icon: TrendingUp },
+  { href: '/dashboard/my-stock-requests', label: 'My Stock', icon: Package },
+  { href: '/dashboard/my-commission', label: 'My Commission', icon: DollarSign },
+];
+
+const deliveryNav = [
+  { href: '/dashboard/my-assignments', label: 'My Assignments', icon: ClipboardList },
+  { href: '/dashboard/my-collections', label: 'My Collections', icon: DollarSign },
+  { href: '/dashboard/my-earnings', label: 'My Earnings', icon: TrendingUp },
+];
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, logout, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  useEffect(() => {
+    // Route guard: prevent role-specific pages from being accessed by other roles
+    if (!user) return;
+
+    const isAdminRoute = pathname === '/dashboard' ||
+      ['/dashboard/users', '/dashboard/residences', '/dashboard/resellers',
+       '/dashboard/stock-requests', '/dashboard/sales', '/dashboard/delivery',
+       '/dashboard/deposits', '/dashboard/orders', '/dashboard/reports',
+       '/dashboard/notifications'].includes(pathname);
+
+    const isResellerRoute = pathname.startsWith('/dashboard/my-sales') ||
+      pathname.startsWith('/dashboard/my-stock-requests') ||
+      pathname.startsWith('/dashboard/my-commission');
+
+    const isDeliveryRoute = pathname.startsWith('/dashboard/my-assignments') ||
+      pathname.startsWith('/dashboard/my-collections') ||
+      pathname.startsWith('/dashboard/my-earnings');
+
+    if (isAdminRoute && user.role !== 'Admin') {
+      // Wrong role trying to access admin — redirect to their home
+      if (user.role === 'Reseller') router.push('/dashboard/my-sales');
+      else if (user.role === 'Delivery') router.push('/dashboard/my-assignments');
+    } else if (isResellerRoute && user.role !== 'Reseller') {
+      router.push(user.role === 'Admin' ? '/dashboard' : '/dashboard/my-assignments');
+    } else if (isDeliveryRoute && user.role !== 'Delivery') {
+      router.push(user.role === 'Admin' ? '/dashboard' : '/dashboard/my-sales');
+    }
+  }, [pathname, user, router]);
+
   if (loading) return <div className="p-8">Loading...</div>;
   if (!user) return null;
+
+  // Choose nav items based on role
+  const navItems = user.role === 'Admin' ? adminNav :
+                   user.role === 'Reseller' ? resellerNav :
+                   user.role === 'Delivery' ? deliveryNav : [];
+
+  // Role label color
+  const roleColor = user.role === 'Admin' ? 'bg-purple-100 text-purple-800' :
+                    user.role === 'Reseller' ? 'bg-blue-100 text-blue-800' :
+                    'bg-green-100 text-green-800';
 
   return (
     <div className="min-h-screen flex bg-gray-50">
@@ -57,9 +110,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }`}
       >
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-          <div>
+          <div className="min-w-0">
             <h1 className="text-lg font-bold text-gray-800">Ndlovu Bakery</h1>
-            <p className="text-xs text-gray-500 mt-1">{user.role} · {user.employeeId}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${roleColor}`}>
+                {user.role.toUpperCase()}
+              </span>
+              <span className="text-xs text-gray-500 truncate">{user.employeeId}</span>
+            </div>
           </div>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-400">
             <X size={20} />
