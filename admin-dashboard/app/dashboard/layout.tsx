@@ -12,6 +12,7 @@ import {
 
 const adminNav = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard/products', label: 'Products', icon: Package },
   { href: '/dashboard/users', label: 'Users & Roles', icon: UserCog },
   { href: '/dashboard/residences', label: 'Residences', icon: Building2 },
   { href: '/dashboard/resellers', label: 'Applications', icon: Users },

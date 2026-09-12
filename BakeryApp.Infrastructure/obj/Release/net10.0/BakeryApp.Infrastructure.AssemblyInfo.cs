@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BakeryApp.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3618ede78bec5617a3be40ded185ff5846e382ac")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4ebcd42cf376b9811acaee89215ff8d9993de5e4")]
 [assembly: System.Reflection.AssemblyProductAttribute("BakeryApp.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BakeryApp.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
