@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: 'Ndlovu Bakery',
   description: 'Freshly baked, delivered to you',
   icons: {
-    icon: '/logo.png',
+    icon: '/logo-v2.png',
   },
 };
 
