@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { api } from '@/lib/api';
-import { Camera, Save, User, AlertCircle } from 'lucide-react';
+import { Camera, Save, User, CircleAlert } from 'lucide-react';
 import ProfilePic from '@/components/ProfilePic';
 
 export default function ProfilePage() {
@@ -89,7 +89,7 @@ export default function ProfilePage() {
       )}
       {error && (
         <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg flex items-center gap-2">
-          <AlertCircle size={16} /> {error}
+          <CircleAlert size={16} /> {error}
         </div>
       )}
 

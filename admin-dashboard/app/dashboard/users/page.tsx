@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { UserPlus, Truck, CheckCircle, RefreshCw, Users, X } from 'lucide-react';
+import { UserPlus, Truck, CircleCheck, RefreshCw, Users, X } from 'lucide-react';
 
 interface PendingUser {
   employeeId: string;
@@ -186,7 +186,7 @@ export default function UsersPage() {
                           onClick={() => setAssignModal({ open: true, user: u, mode: 'reseller' })}
                           className="flex items-center gap-1 text-xs px-2 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded"
                         >
-                          <CheckCircle size={12} /> As Reseller
+                          <CircleCheck size={12} /> As Reseller
                         </button>
                         <button
                           onClick={() => setAssignModal({ open: true, user: u, mode: 'delivery' })}

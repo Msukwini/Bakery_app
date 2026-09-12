@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CircleCheck, CircleX } from 'lucide-react';
 
 interface StockRequest {
   id: string;
@@ -140,13 +140,13 @@ export default function StockRequestsPage() {
                           onClick={() => { setSelected(r); setAllocatedQty(r.requestedQuantity.toString()); setAction('approve'); }}
                           className="flex items-center gap-1 text-xs text-green-700 hover:text-green-900"
                         >
-                          <CheckCircle size={14} /> Approve
+                          <CircleCheck size={14} /> Approve
                         </button>
                         <button
                           onClick={() => { setSelected(r); setAction('reject'); }}
                           className="flex items-center gap-1 text-xs text-red-700 hover:text-red-900"
                         >
-                          <XCircle size={14} /> Reject
+                          <CircleX size={14} /> Reject
                         </button>
                       </div>
                     )}

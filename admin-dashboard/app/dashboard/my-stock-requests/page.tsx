@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { Package, Plus, X, RefreshCw, CheckCircle, XCircle, Clock, Truck, Calendar } from 'lucide-react';
+import { Package, Plus, X, RefreshCw, CircleCheck, CircleX, Clock, Truck, Calendar } from 'lucide-react';
 
 interface ProductVariant {
   id: string;
@@ -36,7 +36,7 @@ const statusColors = [
   'bg-red-100 text-red-800',
   'bg-gray-100 text-gray-800',
 ];
-const statusIcons = [Clock, CheckCircle, CheckCircle, CheckCircle, XCircle, XCircle];
+const statusIcons = [Clock, CircleCheck, CircleCheck, CircleCheck, CircleX, CircleX];
 
 function formatDateTime(iso: string | null) {
   if (!iso) return '—';
@@ -198,7 +198,7 @@ export default function MyStockRequestsPage() {
                           />
                           {r.reviewedAt && (
                             <TimelineItem
-                              icon={r.status === 4 ? XCircle : CheckCircle}
+                              icon={r.status === 4 ? CircleX : CircleCheck}
                               label={r.status === 4 ? 'Rejected' : 'Reviewed by Admin'}
                               value={formatDateTime(r.reviewedAt)}
                               color={r.status === 4 ? 'text-red-600' : 'text-blue-600'}
@@ -207,7 +207,7 @@ export default function MyStockRequestsPage() {
                           )}
                           {r.allocatedAt && (
                             <TimelineItem
-                              icon={CheckCircle}
+                              icon={CircleCheck}
                               label="Stock Allocated"
                               value={formatDateTime(r.allocatedAt)}
                               color="text-purple-600"

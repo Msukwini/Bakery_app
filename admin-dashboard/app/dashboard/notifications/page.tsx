@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { Mail, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { Mail, CircleCheck, CircleAlert, RefreshCw } from 'lucide-react';
 
 interface Notification {
   id: string;
@@ -126,9 +126,9 @@ export default function NotificationsPage() {
                 <tr key={n.id} className="hover:bg-gray-50">
                   <td className="px-3 sm:px-4 py-2 sm:py-3">
                     {n.sent ? (
-                      <CheckCircle size={18} className="text-green-600" />
+                      <CircleCheck size={18} className="text-green-600" />
                     ) : (
-                      <AlertCircle size={18} className="text-red-500" />
+                      <CircleAlert size={18} className="text-red-500" />
                     )}
                   </td>
                   <td className="px-3 sm:px-4 py-2 sm:py-3">

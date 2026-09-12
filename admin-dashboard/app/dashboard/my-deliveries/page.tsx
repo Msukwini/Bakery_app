@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { Truck, MapPin, Package, CheckCircle, X, RefreshCw, Clock } from 'lucide-react';
+import { Truck, MapPin, Package, CircleCheck, X, RefreshCw, Clock } from 'lucide-react';
 
 interface Delivery {
   id: string;
@@ -130,7 +130,7 @@ export default function MyDeliveriesPage() {
                     }}
                     className="flex items-center gap-2 px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg self-start"
                   >
-                    <CheckCircle size={14} /> Mark Delivered
+                    <CircleCheck size={14} /> Mark Delivered
                   </button>
                 </div>
               </div>
@@ -143,7 +143,7 @@ export default function MyDeliveriesPage() {
       {completed.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-            <CheckCircle size={20} className="text-green-600" />
+            <CircleCheck size={20} className="text-green-600" />
             Completed ({completed.length})
           </h2>
           <div className="bg-white rounded-xl border overflow-x-auto">

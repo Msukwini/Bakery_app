@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { Package, Users, ShoppingCart, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
+import { Package, Users, ShoppingCart, DollarSign, TrendingUp, CircleAlert } from 'lucide-react';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -90,7 +90,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="mt-6 flex items-start gap-3 p-4 bg-blue-50 border border-blue-100 rounded-lg">
-        <AlertCircle size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
+        <CircleAlert size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
         <div className="text-sm text-blue-900">
           <p className="font-medium">Connected to API</p>
           <p className="text-blue-700 mt-1 break-all">Live data from ndlovubakery.duckdns.org</p>

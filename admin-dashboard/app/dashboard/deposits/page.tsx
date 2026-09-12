@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CircleCheck, CircleX } from 'lucide-react';
 
 interface Deposit {
   id: string;
@@ -101,10 +101,10 @@ export default function DepositsPage() {
                     {d.status === 0 && (
                       <div className="flex gap-2">
                         <button onClick={() => review(d.id, 2)} className="flex items-center gap-1 text-xs text-green-700">
-                          <CheckCircle size={14} /> Approve
+                          <CircleCheck size={14} /> Approve
                         </button>
                         <button onClick={() => review(d.id, 3)} className="flex items-center gap-1 text-xs text-red-700">
-                          <XCircle size={14} /> Reject
+                          <CircleX size={14} /> Reject
                         </button>
                       </div>
                     )}
