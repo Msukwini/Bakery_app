@@ -57,7 +57,7 @@ export default function OrdersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Orders</h1>
         <button onClick={load} className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg">
           Refresh
@@ -71,35 +71,35 @@ export default function OrdersPage() {
           No orders yet.
         </div>
       ) : (
-        <div className="bg-white rounded-xl border overflow-hidden">
+        <div className="bg-white rounded-xl border overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-600 text-left">
               <tr>
-                <th className="px-4 py-3">Order #</th>
-                <th className="px-4 py-3">Customer</th>
-                <th className="px-4 py-3">Items</th>
-                <th className="px-4 py-3">Total</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Paid</th>
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Change</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Order #</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Customer</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Items</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Total</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Status</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Paid</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Date</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Change</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {orders.map((o) => (
                 <tr key={o.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs">{o.orderNumber}</td>
-                  <td className="px-4 py-3">{o.customerName}<div className="text-xs text-gray-400">{o.customerPhone}</div></td>
-                  <td className="px-4 py-3">{o.items.length} item(s)</td>
-                  <td className="px-4 py-3">R {o.totalAmount.toFixed(2)}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 sm:px-4 py-2 sm:py-3 font-mono text-xs">{o.orderNumber}</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">{o.customerName}<div className="text-xs text-gray-400">{o.customerPhone}</div></td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">{o.items.length} item(s)</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">R {o.totalAmount.toFixed(2)}</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">
                     <span className={`px-2 py-1 rounded text-xs font-medium ${statusColors[o.status]}`}>
                       {statusLabels[o.status]}
                     </span>
                   </td>
-                  <td className="px-4 py-3">{o.isPaid ? '✅' : '—'}</td>
-                  <td className="px-4 py-3 text-gray-500">{new Date(o.createdAt).toLocaleDateString()}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">{o.isPaid ? '✅' : '—'}</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-500">{new Date(o.createdAt).toLocaleDateString()}</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">
                     <select
                       onChange={(e) => updateStatus(o.id, parseInt(e.target.value))}
                       className="text-xs border rounded px-2 py-1"

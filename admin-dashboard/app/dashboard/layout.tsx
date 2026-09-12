@@ -1,11 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import {
   LayoutDashboard, Users, Package, ShoppingCart,
-  Truck, DollarSign, FileText, LogOut, Home, Mail, UserCog, Building2
+  Truck, DollarSign, FileText, LogOut, Home, Mail, UserCog, Building2, Menu, X
 } from 'lucide-react';
 
 const navItems = [
@@ -25,16 +26,44 @@ const navItems = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, logout, loading } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (loading) return <div className="p-8">Loading...</div>;
   if (!user) return null;
 
   return (
     <div className="min-h-screen flex bg-gray-50">
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-6 border-b border-gray-200">
-          <h1 className="text-lg font-bold text-gray-800">Ndlovu Bakery</h1>
-          <p className="text-xs text-gray-500 mt-1">{user.role} · {user.employeeId}</p>
+      {/* Mobile top bar */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-30 flex items-center justify-between px-4 py-3">
+        <button onClick={() => setSidebarOpen(true)} className="text-gray-700">
+          <Menu size={24} />
+        </button>
+        <h1 className="font-bold text-gray-800">Ndlovu Bakery</h1>
+        <div className="w-6" />
+      </div>
+
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/40 z-40"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed lg:static inset-y-0 left-0 w-64 bg-white border-r border-gray-200 flex flex-col z-50 transform transition-transform ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
+      >
+        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-bold text-gray-800">Ndlovu Bakery</h1>
+            <p className="text-xs text-gray-500 mt-1">{user.role} · {user.employeeId}</p>
+          </div>
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-400">
+            <X size={20} />
+          </button>
         </div>
 
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -45,6 +74,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition ${
                   active
                     ? 'bg-blue-50 text-blue-700 font-medium'
@@ -69,8 +99,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto">
-        <div className="p-8">{children}</div>
+      {/* Main content */}
+      <main className="flex-1 overflow-auto lg:ml-0 pt-14 lg:pt-0">
+        <div className="p-4 sm:p-6 lg:p-8">{children}</div>
       </main>
     </div>
   );

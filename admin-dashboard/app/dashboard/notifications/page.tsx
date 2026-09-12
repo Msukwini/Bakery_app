@@ -55,7 +55,7 @@ export default function NotificationsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Email Notifications</h1>
           <p className="text-sm text-gray-500 mt-1">Automated email log</p>
@@ -110,34 +110,34 @@ export default function NotificationsPage() {
           <p className="text-xs mt-1">Emails will appear here as they are triggered</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border overflow-hidden">
+        <div className="bg-white rounded-xl border overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-600 text-left">
               <tr>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Recipient</th>
-                <th className="px-4 py-3">Subject</th>
-                <th className="px-4 py-3">Sent At</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Status</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Type</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Recipient</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Subject</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Sent At</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.map((n) => (
                 <tr key={n.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">
                     {n.sent ? (
                       <CheckCircle size={18} className="text-green-600" />
                     ) : (
                       <AlertCircle size={18} className="text-red-500" />
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">
                     <span className={`px-2 py-1 rounded text-xs font-medium ${typeColors[n.type] ?? 'bg-gray-100 text-gray-800'}`}>
                       {n.type}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-700">{n.recipientEmail}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-700">{n.recipientEmail}</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">
                     <div className="font-medium text-gray-800">{n.subject}</div>
                     {!n.sent && n.errorMessage && (
                       <div className="text-xs text-red-600 mt-1 truncate max-w-md">
@@ -145,7 +145,7 @@ export default function NotificationsPage() {
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">
+                  <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-500 text-xs">
                     {n.sentAt ? new Date(n.sentAt).toLocaleString() : new Date(n.createdAt).toLocaleString()}
                   </td>
                 </tr>

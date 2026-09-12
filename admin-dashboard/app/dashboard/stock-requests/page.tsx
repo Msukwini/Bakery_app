@@ -85,7 +85,7 @@ export default function StockRequestsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Stock Requests</h1>
         <button onClick={load} className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg">
           Refresh
@@ -107,33 +107,33 @@ export default function StockRequestsPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-600 text-left">
               <tr>
-                <th className="px-4 py-3">Reseller</th>
-                <th className="px-4 py-3">Product</th>
-                <th className="px-4 py-3">Requested</th>
-                <th className="px-4 py-3">Allocated</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Actions</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Reseller</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Product</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Requested</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Allocated</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Status</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Date</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {requests.map((r) => (
                 <tr key={r.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">{r.resellerCode}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 sm:px-4 py-2 sm:py-3 font-medium">{r.resellerCode}</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">
                     {r.productName} <span className="text-gray-400">·</span> {r.variantName}
                   </td>
-                  <td className="px-4 py-3">{r.requestedQuantity}</td>
-                  <td className="px-4 py-3">{r.allocatedQuantity ?? '—'}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">{r.requestedQuantity}</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">{r.allocatedQuantity ?? '—'}</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">
                     <span className={`px-2 py-1 rounded text-xs font-medium ${statusColors[r.status]}`}>
                       {statusLabels[r.status]}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">
+                  <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-500">
                     {new Date(r.requestedAt).toLocaleDateString()}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">
                     {r.status === 0 && (
                       <div className="flex gap-2">
                         <button
@@ -160,7 +160,7 @@ export default function StockRequestsPage() {
 
       {selected && action === 'approve' && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 sm:mx-auto">
             <h2 className="text-lg font-semibold mb-4">Approve Request</h2>
             <p className="text-sm text-gray-600 mb-4">
               {selected.resellerCode} requested {selected.requestedQuantity} × {selected.productName} ({selected.variantName})
@@ -193,7 +193,7 @@ export default function StockRequestsPage() {
 
       {selected && action === 'reject' && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 sm:mx-auto">
             <h2 className="text-lg font-semibold mb-4">Reject Request</h2>
             <label className="block text-sm font-medium mb-1">Reason (required)</label>
             <textarea

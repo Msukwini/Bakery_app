@@ -80,31 +80,31 @@ export default function DeliveryPage() {
       {message && <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg">{message}</div>}
 
       {loading ? <p className="text-gray-500">Loading...</p> : assignments.length > 0 ? (
-        <div className="bg-white rounded-xl border overflow-hidden">
+        <div className="bg-white rounded-xl border overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-600 text-left">
               <tr>
-                <th className="px-4 py-3">Reseller</th>
-                <th className="px-4 py-3">Permanent</th>
-                <th className="px-4 py-3">Actual</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Period</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Reseller</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Permanent</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Actual</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Type</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Period</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {assignments.map((a) => (
                 <tr key={a.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">{a.resellerCode}</td>
-                  <td className="px-4 py-3">{a.permanentDeliveryCode}</td>
-                  <td className="px-4 py-3">{a.actualDeliveryCode ?? '—'}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 sm:px-4 py-2 sm:py-3 font-medium">{a.resellerCode}</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">{a.permanentDeliveryCode}</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">{a.actualDeliveryCode ?? '—'}</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
                       a.type === 0 ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'
                     }`}>
                       {a.type === 0 ? 'PERMANENT' : 'TEMPORARY'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">
+                  <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-500 text-xs">
                     {new Date(a.startDate).toLocaleDateString()} → {a.endDate ? new Date(a.endDate).toLocaleDateString() : 'present'}
                   </td>
                 </tr>

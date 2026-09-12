@@ -103,27 +103,27 @@ export default function SalesPage() {
       )}
 
       {loading ? <p className="text-gray-500">Loading...</p> : ledger.length > 0 && (
-        <div className="bg-white rounded-xl border overflow-hidden">
+        <div className="bg-white rounded-xl border overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-600 text-left">
               <tr>
-                <th className="px-4 py-3">Product</th>
-                <th className="px-4 py-3">Qty</th>
-                <th className="px-4 py-3">Earned</th>
-                <th className="px-4 py-3">Paid</th>
-                <th className="px-4 py-3">Settled</th>
-                <th className="px-4 py-3">Date</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Product</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Qty</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Earned</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Paid</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Settled</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3">Date</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {ledger.map((e) => (
                 <tr key={e.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">{e.productName} · {e.variantName}</td>
-                  <td className="px-4 py-3">{e.quantity}</td>
-                  <td className="px-4 py-3">R {e.amountEarned.toFixed(2)}</td>
-                  <td className="px-4 py-3">R {e.amountPaid.toFixed(2)}</td>
-                  <td className="px-4 py-3">{e.isSettled ? '✅' : '⏳'}</td>
-                  <td className="px-4 py-3 text-gray-500">{new Date(e.createdAt).toLocaleDateString()}</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">{e.productName} · {e.variantName}</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">{e.quantity}</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">R {e.amountEarned.toFixed(2)}</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">R {e.amountPaid.toFixed(2)}</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3">{e.isSettled ? '✅' : '⏳'}</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-500">{new Date(e.createdAt).toLocaleDateString()}</td>
                 </tr>
               ))}
             </tbody>

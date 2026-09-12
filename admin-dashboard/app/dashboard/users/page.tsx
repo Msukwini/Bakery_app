@@ -127,7 +127,7 @@ export default function UsersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Users & Roles</h1>
           <p className="text-sm text-gray-500 mt-1">Approve applicants and assign roles</p>
@@ -158,29 +158,29 @@ export default function UsersPage() {
             No pending applicants. New users will appear here after self-registering.
           </div>
         ) : (
-          <div className="bg-white rounded-xl border overflow-hidden">
+          <div className="bg-white rounded-xl border overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-600 text-left">
                 <tr>
-                  <th className="px-4 py-3">Code</th>
-                  <th className="px-4 py-3">Name</th>
-                  <th className="px-4 py-3">Email</th>
-                  <th className="px-4 py-3">Phone</th>
-                  <th className="px-4 py-3">Registered</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3">Code</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3">Name</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3">Email</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3">Phone</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3">Registered</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {pending.map((u) => (
                   <tr key={u.employeeId} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono text-xs">{u.code}</td>
-                    <td className="px-4 py-3 font-medium">{u.firstName} {u.lastName}</td>
-                    <td className="px-4 py-3">{u.email}</td>
-                    <td className="px-4 py-3">{u.phone}</td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">
+                    <td className="px-3 sm:px-4 py-2 sm:py-3 font-mono text-xs">{u.code}</td>
+                    <td className="px-3 sm:px-4 py-2 sm:py-3 font-medium">{u.firstName} {u.lastName}</td>
+                    <td className="px-3 sm:px-4 py-2 sm:py-3">{u.email}</td>
+                    <td className="px-3 sm:px-4 py-2 sm:py-3">{u.phone}</td>
+                    <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-500 text-xs">
                       {new Date(u.registeredAt).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 sm:px-4 py-2 sm:py-3">
                       <div className="flex gap-2 justify-end">
                         <button
                           onClick={() => setAssignModal({ open: true, user: u, mode: 'reseller' })}
@@ -214,14 +214,14 @@ export default function UsersPage() {
         {loading ? (
           <p className="text-gray-500">Loading...</p>
         ) : (
-          <div className="bg-white rounded-xl border overflow-hidden">
+          <div className="bg-white rounded-xl border overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-600 text-left">
                 <tr>
-                  <th className="px-4 py-3">Name</th>
-                  <th className="px-4 py-3">Email</th>
-                  <th className="px-4 py-3">Roles</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3">Name</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3">Email</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3">Roles</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -230,9 +230,9 @@ export default function UsersPage() {
                   const hasDelivery = p.roles.some(r => r.role === 'Delivery');
                   return (
                     <tr key={p.personId} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium">{p.firstName} {p.lastName}</td>
-                      <td className="px-4 py-3 text-gray-600">{p.email}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 sm:px-4 py-2 sm:py-3 font-medium">{p.firstName} {p.lastName}</td>
+                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-600">{p.email}</td>
+                      <td className="px-3 sm:px-4 py-2 sm:py-3">
                         <div className="flex flex-wrap gap-1">
                           {p.roles.length === 0 && <span className="text-xs text-gray-400">No active roles</span>}
                           {p.roles.map((r) => (
@@ -249,7 +249,7 @@ export default function UsersPage() {
                           ))}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 sm:px-4 py-2 sm:py-3">
                         <div className="flex gap-2 justify-end">
                           {!hasDelivery && p.roles.length > 0 && (
                             <button
@@ -284,7 +284,7 @@ export default function UsersPage() {
       {/* ASSIGN MODAL */}
       {assignModal.open && assignModal.user && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 sm:mx-auto">
             <h2 className="text-lg font-semibold mb-2">
               {assignModal.mode === 'reseller' ? 'Approve as Reseller' : 'Add Delivery Role'}
             </h2>
