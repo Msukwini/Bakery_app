@@ -66,7 +66,6 @@ public class AuthController : ControllerBase
                 Role = role.ToString(),
                 EmployeeId = employee.Code,
             EmployeeGuid = employee.Id,
-                EmployeeGuid = employee.Id
             });
         }
         catch (Exception ex)
