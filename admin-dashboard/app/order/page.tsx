@@ -136,7 +136,7 @@ export default function GuestOrderPage() {
       <header className="bg-white border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <Croissant className="text-amber-600" size={24} />
+            <img src="/logo.png" alt="Ndlovu Bakery" className="w-8 h-8 object-contain" />
             <span className="font-bold text-lg text-gray-800">Ndlovu Bakery</span>
           </Link>
           <div className="flex items-center gap-2">

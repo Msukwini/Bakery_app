@@ -96,7 +96,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <button onClick={() => setSidebarOpen(true)} className="text-gray-700">
           <Menu size={24} />
         </button>
-        <h1 className="font-bold text-gray-800">Ndlovu Bakery</h1>
+        <div className="flex items-center gap-2"><img src="/logo.png" alt="Ndlovu Bakery" className="w-7 h-7 object-contain" /><div className="flex items-center gap-2"><img src="/logo.png" alt="Ndlovu Bakery" className="w-7 h-7 object-contain" /><h1 className="font-bold text-gray-800">Ndlovu Bakery</h1></div></div>
         <div className="w-6" />
       </div>
 
@@ -109,6 +109,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }`}>
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
           <div className="min-w-0">
+          <img src="/logo.png" alt="Ndlovu Bakery" className="w-10 h-10 object-contain flex-shrink-0" />
             <h1 className="text-lg font-bold text-gray-800">Ndlovu Bakery</h1>
             <div className="flex items-center gap-2 mt-1">
               <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${roleColor}`}>
