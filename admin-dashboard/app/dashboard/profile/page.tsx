@@ -144,9 +144,9 @@ export default function ProfilePage() {
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="First Name" value={form.firstName} onChange={(v) => setForm({ ...form, firstName: v })} />
-          <Field label="Last Name" value={form.lastName} onChange={(v) => setForm({ ...form, lastName: v })} />
-          <Field label="Phone Number" value={form.phoneNumber} onChange={(v) => setForm({ ...form, phoneNumber: v })} />
+          <Field label="First Name" value={form.firstName} onChange={(v: string) => setForm({ ...form, firstName: v })} />
+          <Field label="Last Name" value={form.lastName} onChange={(v: string) => setForm({ ...form, lastName: v })} />
+          <Field label="Phone Number" value={form.phoneNumber} onChange={(v: string) => setForm({ ...form, phoneNumber: v })} />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input value={profile.email} disabled className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 text-gray-500" />
@@ -157,8 +157,8 @@ export default function ProfilePage() {
           <div className="mt-6 pt-6 border-t border-gray-100">
             <h3 className="font-semibold text-gray-800 mb-4">Student Information (optional)</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="University" value={form.universityName} onChange={(v) => setForm({ ...form, universityName: v })} placeholder="e.g., DUT, UKZN" />
-              <Field label="Student Email" value={form.studentEmail} onChange={(v) => setForm({ ...form, studentEmail: v })} placeholder="e.g., 12345@dut4life.ac.za" />
+              <Field label="University" value={form.universityName} onChange={(v: string) => setForm({ ...form, universityName: v })} placeholder="e.g., DUT, UKZN" />
+              <Field label="Student Email" value={form.studentEmail} onChange={(v: string) => setForm({ ...form, studentEmail: v })} placeholder="e.g., 12345@dut4life.ac.za" />
             </div>
           </div>
         )}

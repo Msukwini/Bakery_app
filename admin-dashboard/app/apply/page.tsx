@@ -76,38 +76,38 @@ export default function ApplyPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <Section title="Personal Information">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input required label="First Name" value={form.firstName} onChange={(v) => setForm({ ...form, firstName: v })} />
-                <Input required label="Last Name" value={form.lastName} onChange={(v) => setForm({ ...form, lastName: v })} />
+                <Input required label="First Name" value={form.firstName} onChange={(v: string) => setForm({ ...form, firstName: v })} />
+                <Input required label="Last Name" value={form.lastName} onChange={(v: string) => setForm({ ...form, lastName: v })} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input required type="email" label="Email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
-                <Input required label="Phone Number" value={form.phoneNumber} onChange={(v) => setForm({ ...form, phoneNumber: v })} />
+                <Input required type="email" label="Email" value={form.email} onChange={(v: string) => setForm({ ...form, email: v })} />
+                <Input required label="Phone Number" value={form.phoneNumber} onChange={(v: string) => setForm({ ...form, phoneNumber: v })} />
               </div>
             </Section>
 
             <Section title="Student Information (optional)">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input label="University" placeholder="e.g., DUT, UKZN" value={form.universityName} onChange={(v) => setForm({ ...form, universityName: v })} />
-                <Input label="Student Email" placeholder="e.g., 12345@dut4life.ac.za" value={form.studentEmail} onChange={(v) => setForm({ ...form, studentEmail: v })} />
+                <Input label="University" placeholder="e.g., DUT, UKZN" value={form.universityName} onChange={(v: string) => setForm({ ...form, universityName: v })} />
+                <Input label="Student Email" placeholder="e.g., 12345@dut4life.ac.za" value={form.studentEmail} onChange={(v: string) => setForm({ ...form, studentEmail: v })} />
               </div>
             </Section>
 
             <Section title="Residence Details">
-              <Input required label="Residence Name" placeholder="e.g., Sunrise Student Village" value={form.residenceName} onChange={(v) => setForm({ ...form, residenceName: v })} />
+              <Input required label="Residence Name" placeholder="e.g., Sunrise Student Village" value={form.residenceName} onChange={(v: string) => setForm({ ...form, residenceName: v })} />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input label="Room / Unit Number" value={form.roomNumber} onChange={(v) => setForm({ ...form, roomNumber: v })} />
-                <Input type="number" label="Estimated Population" placeholder="e.g., 500" value={form.estimatedResidencePopulation} onChange={(v) => setForm({ ...form, estimatedResidencePopulation: v })} />
+                <Input label="Room / Unit Number" value={form.roomNumber} onChange={(v: string) => setForm({ ...form, roomNumber: v })} />
+                <Input type="number" label="Estimated Population" placeholder="e.g., 500" value={form.estimatedResidencePopulation} onChange={(v: string) => setForm({ ...form, estimatedResidencePopulation: v })} />
               </div>
             </Section>
 
             <Section title="Selling Details">
-              <Input label="Preferred Selling Area" placeholder="e.g., Blocks A & B" value={form.preferredSellingArea} onChange={(v) => setForm({ ...form, preferredSellingArea: v })} />
-              <Textarea label="Previous Sales Experience" rows={2} value={form.previousSalesExperience} onChange={(v) => setForm({ ...form, previousSalesExperience: v })} />
+              <Input label="Preferred Selling Area" placeholder="e.g., Blocks A & B" value={form.preferredSellingArea} onChange={(v: string) => setForm({ ...form, preferredSellingArea: v })} />
+              <Textarea label="Previous Sales Experience" rows={2} value={form.previousSalesExperience} onChange={(v: string) => setForm({ ...form, previousSalesExperience: v })} />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input label="Availability" placeholder="e.g., Weekends only" value={form.availability} onChange={(v) => setForm({ ...form, availability: v })} />
-                <Input label="Time at Residence" placeholder="e.g., 2 years remaining" value={form.expectedTimeAtResidence} onChange={(v) => setForm({ ...form, expectedTimeAtResidence: v })} />
+                <Input label="Availability" placeholder="e.g., Weekends only" value={form.availability} onChange={(v: string) => setForm({ ...form, availability: v })} />
+                <Input label="Time at Residence" placeholder="e.g., 2 years remaining" value={form.expectedTimeAtResidence} onChange={(v: string) => setForm({ ...form, expectedTimeAtResidence: v })} />
               </div>
-              <Textarea label="Anything else you'd like us to know?" rows={3} value={form.additionalInfo} onChange={(v) => setForm({ ...form, additionalInfo: v })} />
+              <Textarea label="Anything else you'd like us to know?" rows={3} value={form.additionalInfo} onChange={(v: string) => setForm({ ...form, additionalInfo: v })} />
             </Section>
 
             {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">{error}</div>}
