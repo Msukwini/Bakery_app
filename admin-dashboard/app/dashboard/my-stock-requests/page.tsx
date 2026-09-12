@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { Package, Plus, X, RefreshCw, CircleCheck, CircleX, Clock, Truck, Calendar } from 'lucide-react';
+import { Package, Plus, X, Clock } from 'lucide-react';
 
 interface ProductVariant {
   id: string;
@@ -112,7 +112,7 @@ export default function MyStockRequestsPage() {
             onClick={load}
             className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg"
           >
-            <RefreshCw size={14} /> Refresh
+            <Clock size={14} /> Refresh
           </button>
           <button
             onClick={() => setShowModal(true)}
