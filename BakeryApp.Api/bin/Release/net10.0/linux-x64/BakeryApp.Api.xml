@@ -4,6 +4,11 @@
         <name>BakeryApp.Api</name>
     </assembly>
     <members>
+        <member name="M:BakeryApp.Api.Controllers.ProfileController.GetPublicProfile(System.Guid)">
+            <summary>
+            Public-safe profile — first name, last name, phone, picture flag only
+            </summary>
+        </member>
         <member name="M:BakeryApp.Api.Controllers.RoleManagementController.ListPendingUsers">
             <summary>
             List all Applicants (people who registered but have no Reseller/Delivery role yet)
@@ -27,6 +32,12 @@
         <member name="M:BakeryApp.Api.Controllers.RoleManagementController.DeactivateRole(System.Guid)">
             <summary>
             Deactivate a role (e.g., terminate a reseller)
+            </summary>
+        </member>
+        <member name="M:BakeryApp.Api.Controllers.TeamController.GetMyTeam">
+            <summary>
+            For delivery people: get all resellers they deliver to.
+            For resellers: get the delivery person assigned to them.
             </summary>
         </member>
         <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.CreateDocumentationId(System.Type)">

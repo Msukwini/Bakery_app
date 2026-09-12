@@ -10,7 +10,12 @@ public class Person
     public string PasswordHash { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    // Password setup (used when admin creates account)
+    // Profile
+    public string? ProfilePicturePath { get; set; }
+    public string? UniversityName { get; set; }
+    public string? StudentEmail { get; set; }
+
+    // Password setup
     public string? PasswordSetupToken { get; set; }
     public DateTime? PasswordSetupTokenExpiry { get; set; }
     public bool HasSetPassword { get; set; } = false;
