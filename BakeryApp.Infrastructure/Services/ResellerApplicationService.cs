@@ -124,16 +124,20 @@ public class ResellerApplicationService : IResellerApplicationService
 
             application.ApprovedEmployeeId = employee.Id;
 
-            // Generate password setup token
-            var setupToken = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
-            person.PasswordSetupToken = setupToken;
-            person.PasswordSetupTokenExpiry = DateTime.UtcNow.AddDays(7);
-            person.HasSetPassword = false;
-            await _context.SaveChangesAsync();
+            // Only generate setup link if the applicant did NOT set a password
+            if (string.IsNullOrEmpty(person.PasswordHash))
+            {
+                var setupToken = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+                person.PasswordSetupToken = setupToken;
+                person.PasswordSetupTokenExpiry = DateTime.UtcNow.AddDays(7);
+                person.HasSetPassword = false;
+                await _context.SaveChangesAsync();
 
-            var frontendUrl = "https://ndlovufreshgoods.duckdns.org";
-            var setupLink = $"{frontendUrl}/setup-password?token={setupToken}";
-            await _notificationService.NotifyResellerSetupLinkAsync(person.Email, person.FirstName, setupLink);
+                var frontendUrl = "https://ndlovufreshgoods.duckdns.org";
+                var setupLink = $"{frontendUrl}/setup-password?token={setupToken}";
+                await _notificationService.NotifyResellerSetupLinkAsync(person.Email, person.FirstName, setupLink);
+            }
+
             application.ResidenceId = residenceId.Value;
         }
         else

@@ -1,8 +1,8 @@
-import Link from 'next/link';
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import { saveAuth } from '@/lib/auth';
 
@@ -21,18 +21,12 @@ export default function LoginPage() {
     try {
       const res = await api.post('/api/Auth/login', { email, password });
       const { token, role, employeeId, employeeGuid } = res.data;
-
       saveAuth(token, { email, role, employeeId, employeeGuid });
 
-      if (role === 'Admin') {
-        router.push('/dashboard');
-      } else if (role === 'Reseller') {
-        router.push('/dashboard/my-sales');
-      } else if (role === 'Delivery') {
-        router.push("/dashboard/my-deliveries");
-      } else {
-        router.push('/dashboard');
-      }
+      if (role === 'Admin') router.push('/dashboard');
+      else if (role === 'Reseller') router.push('/dashboard/my-sales');
+      else if (role === 'Delivery') router.push('/dashboard/my-deliveries');
+      else router.push('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Invalid email or password.');
     } finally {
@@ -43,8 +37,10 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md p-6 sm:p-8 bg-white rounded-2xl shadow-lg">
-        <div className="flex justify-center mb-3"><img src="/logo.png" alt="Ndlovu Bakery" className="w-32 h-32 object-contain" /></div>
-        <h1 className="text-2xl font-bold text-center text-gray-800 mb-2">Ndlovu Bakery</h1>
+        <div className="flex justify-center mb-3">
+          <img src="/logo.png" alt="Ndlovu Bakery" className="w-20 h-20 object-contain" />
+        </div>
+        <h1 className="text-2xl font-bold text-center text-gray-800 mb-1">Ndlovu Bakery</h1>
         <p className="text-center text-sm text-gray-500 mb-6">Sign in to your account</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -83,8 +79,11 @@ export default function LoginPage() {
           >
             {loading ? 'Signing in...' : 'Sign in'}
           </button>
+
           <p className="text-center text-sm mt-4">
-            <Link href="/forgot-password" className="text-blue-600 hover:underline">Forgot password?</Link>
+            <Link href="/forgot-password" className="text-blue-600 hover:underline">
+              Forgot password?
+            </Link>
           </p>
         </form>
       </div>
