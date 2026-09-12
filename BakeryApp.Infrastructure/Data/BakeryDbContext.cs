@@ -53,5 +53,24 @@ public class BakeryDbContext : DbContext
             .WithMany()
             .HasForeignKey(s => s.CommissionRuleId)
             .OnDelete(DeleteBehavior.Restrict); // Prevent deleting a rule if sales reference it
+
+        // DeliveryAssignment — explicit FK configs to prevent shadow columns
+        modelBuilder.Entity<DeliveryAssignment>()
+            .HasOne(a => a.Reseller)
+            .WithMany()
+            .HasForeignKey(a => a.ResellerEmployeeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<DeliveryAssignment>()
+            .HasOne(a => a.PermanentDeliveryEmployee)
+            .WithMany()
+            .HasForeignKey(a => a.PermanentDeliveryEmployeeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<DeliveryAssignment>()
+            .HasOne(a => a.ActualDeliveryEmployee)
+            .WithMany()
+            .HasForeignKey(a => a.ActualDeliveryEmployeeId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
