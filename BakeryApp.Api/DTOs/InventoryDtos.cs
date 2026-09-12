@@ -6,15 +6,16 @@ public class AddStockRequest
 {
     public Guid ProductVariantId { get; set; }
     public int Quantity { get; set; }
-    public InventoryTransactionType TransactionType { get; set; } // PRODUCTION, PURCHASE, etc.
+    public InventoryTransactionType TransactionType { get; set; }
     public string? ReferenceNote { get; set; }
+    public decimal? UnitCost { get; set; }
 }
 
 public class DeductStockRequest
 {
     public Guid ProductVariantId { get; set; }
     public int Quantity { get; set; }
-    public InventoryTransactionType TransactionType { get; set; } // DAMAGED, EXPIRED, LOST, etc.
+    public InventoryTransactionType TransactionType { get; set; }
     public string? ReferenceNote { get; set; }
 }
 
@@ -37,4 +38,6 @@ public class LedgerEntryResponse
     public DateTime Timestamp { get; set; }
     public string ReferenceNote { get; set; } = string.Empty;
     public string? EmployeeCode { get; set; }
+    public decimal? UnitCost { get; set; }
+    public decimal? TotalCost { get; set; }
 }

@@ -9,16 +9,6 @@
             List all assignments (for admin dashboard)
             </summary>
         </member>
-        <member name="M:BakeryApp.Api.Controllers.ProductsController.ListVariants">
-            <summary>
-            Public — anyone can browse products.
-            </summary>
-        </member>
-        <member name="M:BakeryApp.Api.Controllers.ProductsController.GetCatalog">
-            <summary>
-            Public — grouped products for the homepage.
-            </summary>
-        </member>
         <member name="M:BakeryApp.Api.Controllers.ProfileController.GetPublicProfile(System.Guid)">
             <summary>
             Public-safe profile — first name, last name, phone, picture flag only
@@ -54,6 +44,12 @@
             For delivery people: get all resellers they deliver to.
             For resellers: get the delivery person assigned to them.
             </summary>
+        </member>
+        <member name="M:BakeryApp.Api.Controllers.VariantPricingController.UpdatePricing(System.Guid,BakeryApp.Api.DTOs.UpdateVariantPricingDto)">
+            <summary>Update pricing for a single variant.</summary>
+        </member>
+        <member name="M:BakeryApp.Api.Controllers.VariantPricingController.List">
+            <summary>List all variants with pricing for admin.</summary>
         </member>
         <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.CreateDocumentationId(System.Type)">
             <summary>

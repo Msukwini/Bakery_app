@@ -7,7 +7,7 @@ namespace BakeryApp.Infrastructure.Services;
 
 public interface IInventoryService
 {
-    Task<InventoryLedgerEntry> AddStockAsync(Guid productVariantId, int quantity, InventoryTransactionType type, string referenceNote, Guid? employeeId = null);
+    Task<InventoryLedgerEntry> AddStockAsync(Guid productVariantId, int quantity, InventoryTransactionType type, string referenceNote, Guid? employeeId = null, decimal? unitCost = null);
     Task<InventoryLedgerEntry> DeductStockAsync(Guid productVariantId, int quantity, InventoryTransactionType type, string referenceNote, Guid? employeeId = null);
     Task<int> GetCurrentStockAsync(Guid productVariantId);
     Task<List<InventoryLedgerEntry>> GetLedgerAsync(Guid productVariantId, int? limit = null);
@@ -22,20 +22,24 @@ public class InventoryService : IInventoryService
         _context = context;
     }
 
-    public async Task<InventoryLedgerEntry> AddStockAsync(Guid productVariantId, int quantity, InventoryTransactionType type, string referenceNote, Guid? employeeId = null)
+    public async Task<InventoryLedgerEntry> AddStockAsync(Guid productVariantId, int quantity, InventoryTransactionType type, string referenceNote, Guid? employeeId = null, decimal? unitCost = null)
     {
         if (quantity <= 0) throw new Exception("Quantity must be positive.");
         if (!Enum.IsDefined(typeof(InventoryTransactionType), type))
             throw new Exception("Invalid transaction type.");
 
+        var totalCost = unitCost.HasValue ? unitCost.Value * quantity : (decimal?)null;
+
         var entry = new InventoryLedgerEntry
         {
             ProductVariantId = productVariantId,
             TransactionType = type,
-            Quantity = quantity, // Positive for incoming
+            Quantity = quantity,
             Timestamp = DateTime.UtcNow,
             ReferenceNote = referenceNote,
-            EmployeeId = employeeId
+            EmployeeId = employeeId,
+            UnitCost = unitCost,
+            TotalCost = totalCost
         };
 
         _context.InventoryLedgerEntries.Add(entry);
@@ -47,7 +51,6 @@ public class InventoryService : IInventoryService
     {
         if (quantity <= 0) throw new Exception("Quantity must be positive.");
 
-        // Check if we have enough stock (optional – for safety)
         var currentStock = await GetCurrentStockAsync(productVariantId);
         if (currentStock < quantity)
             throw new Exception($"Insufficient stock. Available: {currentStock}, Requested: {quantity}");
@@ -56,7 +59,7 @@ public class InventoryService : IInventoryService
         {
             ProductVariantId = productVariantId,
             TransactionType = type,
-            Quantity = -quantity, // Negative for outgoing
+            Quantity = -quantity,
             Timestamp = DateTime.UtcNow,
             ReferenceNote = referenceNote,
             EmployeeId = employeeId

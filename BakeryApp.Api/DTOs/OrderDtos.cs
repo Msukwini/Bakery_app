@@ -17,7 +17,6 @@ public class OrderItemRequest
 {
     public Guid ProductVariantId { get; set; }
     public int Quantity { get; set; }
-    public decimal UnitPrice { get; set; }
 }
 
 public class OrderResponse
@@ -49,16 +48,4 @@ public class OrderItemResponse
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal TotalPrice { get; set; }
-}
-
-public class UpdateOrderStatusRequest
-{
-    public OrderStatus Status { get; set; }
-    public string? AdminNotes { get; set; }
-}
-
-public class UpdatePaymentRequest
-{
-    public string PaymentReference { get; set; } = string.Empty;
-    public bool IsPaid { get; set; }
 }

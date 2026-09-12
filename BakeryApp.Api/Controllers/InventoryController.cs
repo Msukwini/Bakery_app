@@ -1,6 +1,4 @@
 using BakeryApp.Api.DTOs;
-using BakeryApp.Core.Entities;
-using BakeryApp.Core.Enums;
 using BakeryApp.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,7 +9,7 @@ namespace BakeryApp.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize] // All inventory endpoints require authentication
+[Authorize]
 public class InventoryController : ControllerBase
 {
     private readonly IInventoryService _inventoryService;
@@ -37,7 +35,8 @@ public class InventoryController : ControllerBase
                 request.Quantity,
                 request.TransactionType,
                 request.ReferenceNote ?? "",
-                employeeId
+                employeeId,
+                request.UnitCost
             );
             return Ok(new { id = entry.Id, message = "Stock added successfully." });
         }
@@ -112,7 +111,9 @@ public class InventoryController : ControllerBase
             Quantity = e.Quantity,
             Timestamp = e.Timestamp,
             ReferenceNote = e.ReferenceNote,
-            EmployeeCode = e.Employee?.Code
+            EmployeeCode = e.Employee?.Code,
+            UnitCost = e.UnitCost,
+            TotalCost = e.TotalCost
         });
 
         return Ok(response);

@@ -7,7 +7,7 @@ namespace BakeryApp.Infrastructure.Services;
 
 public interface IOrderService
 {
-    Task<BuyerOrder> CreateOrderAsync(string? customerName, string? customerPhone, string? customerEmail, string? deliveryAddress, DateTime requiredDate, List<(Guid ProductVariantId, int Quantity, decimal UnitPrice)> items, string? paymentMethod = null);
+    Task<BuyerOrder> CreateOrderAsync(string? customerName, string? customerPhone, string? customerEmail, string? deliveryAddress, DateTime requiredDate, List<(Guid ProductVariantId, int Quantity)> items, string? paymentMethod = null);
     Task<BuyerOrder> GetOrderAsync(Guid orderId);
     Task<List<BuyerOrder>> GetOrdersAsync(OrderStatus? status = null);
     Task<BuyerOrder> UpdateOrderStatusAsync(Guid orderId, OrderStatus status, string? adminNotes = null);
@@ -20,17 +20,17 @@ public class OrderService : IOrderService
     private readonly IInventoryService _inventoryService;
     private readonly INotificationService _notificationService;
 
-    public OrderService(BakeryDbContext context, IInventoryService inventoryService)
+    public OrderService(BakeryDbContext context, IInventoryService inventoryService, INotificationService notificationService)
     {
         _context = context;
         _inventoryService = inventoryService;
+        _notificationService = notificationService;
     }
 
-    public async Task<BuyerOrder> CreateOrderAsync(string? customerName, string? customerPhone, string? customerEmail, string? deliveryAddress, DateTime requiredDate, List<(Guid ProductVariantId, int Quantity, decimal UnitPrice)> items, string? paymentMethod = null)
+    public async Task<BuyerOrder> CreateOrderAsync(string? customerName, string? customerPhone, string? customerEmail, string? deliveryAddress, DateTime requiredDate, List<(Guid ProductVariantId, int Quantity)> items, string? paymentMethod = null)
     {
         if (!items.Any()) throw new Exception("Order must contain at least one item.");
 
-        // Generate order number (e.g., BUY-0001)
         var count = await _context.BuyerOrders.CountAsync() + 1;
         var orderNumber = $"BUY-{count:D4}";
 
@@ -59,15 +59,18 @@ public class OrderService : IOrderService
                 .FirstOrDefaultAsync(v => v.Id == item.ProductVariantId);
             if (variant == null) throw new Exception($"Product variant {item.ProductVariantId} not found.");
 
+            // SECURITY: use DB price, not client-supplied price
+            var effectivePrice = variant.GuestPrice ?? variant.UnitPrice;
+
             var orderItem = new OrderItem
             {
                 ProductVariantId = item.ProductVariantId,
                 ProductVariant = variant,
                 Quantity = item.Quantity,
-                UnitPrice = item.UnitPrice
+                UnitPrice = effectivePrice
             };
             orderItems.Add(orderItem);
-            total += item.Quantity * item.UnitPrice;
+            total += item.Quantity * effectivePrice;
         }
 
         order.TotalAmount = total;
@@ -76,7 +79,6 @@ public class OrderService : IOrderService
         _context.BuyerOrders.Add(order);
         await _context.SaveChangesAsync();
 
-        // Deduct stock (InventoryService) with transaction type BuyerSale (6)
         foreach (var item in items)
         {
             await _inventoryService.DeductStockAsync(
@@ -94,22 +96,18 @@ public class OrderService : IOrderService
     public async Task<BuyerOrder> GetOrderAsync(Guid orderId)
     {
         return await _context.BuyerOrders
-            .Include(o => o.Items)
-                .ThenInclude(i => i.ProductVariant)
-                    .ThenInclude(v => v.Product)
+            .Include(o => o.Items).ThenInclude(i => i.ProductVariant).ThenInclude(v => v.Product)
             .FirstOrDefaultAsync(o => o.Id == orderId)
             ?? throw new Exception("Order not found.");
     }
 
     public async Task<List<BuyerOrder>> GetOrdersAsync(OrderStatus? status = null)
     {
-        var query = _context.BuyerOrders.AsQueryable();
-        if (status.HasValue)
-            query = query.Where(o => o.Status == status.Value);
-        return await query
-            .Include(o => o.Items)
-            .OrderByDescending(o => o.CreatedAt)
-            .ToListAsync();
+        var query = _context.BuyerOrders
+            .Include(o => o.Items).ThenInclude(i => i.ProductVariant).ThenInclude(v => v.Product)
+            .AsQueryable();
+        if (status.HasValue) query = query.Where(o => o.Status == status.Value);
+        return await query.OrderByDescending(o => o.CreatedAt).ToListAsync();
     }
 
     public async Task<BuyerOrder> UpdateOrderStatusAsync(Guid orderId, OrderStatus status, string? adminNotes = null)
@@ -117,8 +115,7 @@ public class OrderService : IOrderService
         var order = await GetOrderAsync(orderId);
         order.Status = status;
         order.UpdatedAt = DateTime.UtcNow;
-        if (!string.IsNullOrEmpty(adminNotes))
-            order.AdminNotes = adminNotes;
+        if (!string.IsNullOrEmpty(adminNotes)) order.AdminNotes = adminNotes;
         await _context.SaveChangesAsync();
         await _notificationService.NotifyOrderStatusChangeAsync(order, adminNotes);
         return order;
@@ -130,8 +127,7 @@ public class OrderService : IOrderService
         order.PaymentReference = paymentReference;
         order.IsPaid = isPaid;
         order.UpdatedAt = DateTime.UtcNow;
-        if (isPaid)
-            order.Status = OrderStatus.PAID;
+        if (isPaid) order.Status = OrderStatus.PAID;
         await _context.SaveChangesAsync();
         return order;
     }

@@ -15,9 +15,6 @@ public class ProductsController : ControllerBase
         _context = context;
     }
 
-    /// <summary>
-    /// Public — anyone can browse products.
-    /// </summary>
     [HttpGet("variants")]
     public async Task<IActionResult> ListVariants()
     {
@@ -30,7 +27,8 @@ public class ProductsController : ControllerBase
                 v.Id,
                 ProductName = v.Product.Name,
                 v.SizeName,
-                v.UnitPrice,
+                UnitPrice = v.GuestPrice ?? v.UnitPrice,
+                ResellerPrice = v.UnitPrice,
                 ProductDescription = v.Product.Description
             })
             .ToListAsync();
@@ -38,9 +36,6 @@ public class ProductsController : ControllerBase
         return Ok(variants);
     }
 
-    /// <summary>
-    /// Public — grouped products for the homepage.
-    /// </summary>
     [HttpGet("catalog")]
     public async Task<IActionResult> GetCatalog()
     {
@@ -58,7 +53,7 @@ public class ProductsController : ControllerBase
                     {
                         v.Id,
                         v.SizeName,
-                        v.UnitPrice
+                        UnitPrice = v.GuestPrice ?? v.UnitPrice
                     })
                     .ToList()
             })
